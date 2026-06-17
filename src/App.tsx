@@ -68,13 +68,14 @@ function InternalApp() {
         {/* Left Panel - Chat Interface (20%) */}
         <div 
           style={{ 
-            width: chatOpen ? '20%' : '0%',
-            minWidth: '200px',
-            maxWidth: '350px',
-            transition: 'width 0.3s ease',
-            borderRight: '1px solid #3c3c3c',
+            width: chatOpen ? '20%' : '0px',
+            minWidth: chatOpen ? '200px' : '0px',
+            maxWidth: chatOpen ? '350px' : '0px',
+            transition: 'all 0.3s ease',
+            borderRight: chatOpen ? '1px solid #3c3c3c' : 'none',
             backgroundColor: '#ffffff',
             position: 'relative',
+            overflow: 'hidden',
           }}
         >
           <button
