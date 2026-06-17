@@ -3,10 +3,11 @@ import { AppProvider, useAppState } from './context/AppContext'
 import FileExplorer from './components/FileExplorer'
 import EditorTabs from './components/EditorTabs'
 import CodeEditor from './components/CodeEditor'
+import MenuBar from './components/MenuBar'
 
 // Internal App component that uses context
 function InternalApp() {
-  const { tabs, activeTabPath, openFile, updateFileContent, saveFile } = useAppState()
+  const { tabs, activeTabPath, openFile, updateFileContent, saveFile, closeFile } = useAppState()
   const [chatOpen, setChatOpen] = useState(true)
   const [explorerOpen, setExplorerOpen] = useState(true)
 
@@ -29,7 +30,94 @@ function InternalApp() {
     } else {
       console.log('Failed to save file')
     }
-  }, [activeTabPath, activeTab, saveFile])
+  }, [activeTabPath, saveFile])
+
+  const handleNewFile = useCallback(() => {
+    const name = prompt('Enter new file name:')
+    if (name) {
+      const defaultPath = explorerOpen && activeTab ? 
+        activeTab.path.substring(0, activeTab.path.lastIndexOf('/')) + '/' : ''
+      const fullPath = defaultPath + name
+      
+      // Create empty file
+      ;(window as any).nyxide.writeFile(fullPath, '').then(result => {
+        if (result.success) {
+          openFile(fullPath)
+        } else {
+          alert('Failed to create file: ' + result.error)
+        }
+      })
+    }
+  }, [activeTab, openFile, explorerOpen])
+
+  const handleOpenFolder = useCallback(() => {
+    ;(window as any).nyxide.openFolderDialog().then(result => {
+      if (result.success && result.path) {
+        console.log('Open folder:', result.path)
+        // Could load folder in Explorer here if needed
+      }
+    })
+  }, [])
+
+  const handleOpenFile = useCallback(() => {
+    ;(window as any).nyxide.openFileDialog().then(result => {
+      if (result.success && result.filePaths.length > 0) {
+        openFile(result.filePaths[0])
+      }
+    })
+  }, [openFile])
+
+  const handleCloseTab = useCallback(() => {
+    if (activeTabPath) {
+      closeFile(activeTabPath)
+    }
+  }, [activeTabPath, closeFile])
+
+  const handleUndo = useCallback(() => {
+    if (activeTabPath) {
+      ;(document.activeElement as HTMLElement)?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, metaKey: true })
+      )
+    }
+  }, [activeTabPath])
+
+  const handleRedo = useCallback(() => {
+    if (activeTabPath) {
+      ;(document.activeElement as HTMLElement)?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, metaKey: true })
+      )
+    }
+  }, [activeTabPath])
+
+  const handleFind = useCallback(() => {
+    if (activeTabPath) {
+      ;(document.activeElement as HTMLElement)?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, metaKey: true })
+      )
+    }
+  }, [activeTabPath])
+
+  const handleReplace = useCallback(() => {
+    if (activeTabPath) {
+      ;(document.activeElement as HTMLElement)?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'h', ctrlKey: true, metaKey: true })
+      )
+    }
+  }, [activeTabPath])
+
+  const handleZoomIn = useCallback(() => {
+    document.body.style.fontSize = '120%'
+    setTimeout(() => { document.body.style.fontSize = '' }, 100)
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    document.body.style.fontSize = '80%'
+    setTimeout(() => { document.body.style.fontSize = '' }, 100)
+  }, [])
+
+  const handleZoomReset = useCallback(() => {
+    document.body.style.fontSize = ''
+  }, [])
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -42,7 +130,38 @@ function InternalApp() {
         }
       }
       
-      // Ctrl+B - Toggle Explorer (VS Code standard)
+      // Ctrl+N - New File
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        handleNewFile()
+      }
+      
+      // Ctrl+O - Open File
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault()
+        handleOpenFile()
+      }
+      
+      // Ctrl+K Ctrl+O - Open Folder
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        let kTimer: NodeJS.Timeout
+        const startKTimer = () => {
+          kTimer = setTimeout(() => {
+            handleOpenFolder()
+            clearTimeout(kTimer)
+          }, 500)
+        }
+        clearTimeout(kTimer)
+        startKTimer()
+      }
+      
+      // Ctrl+W - Close Tab
+      if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
+        e.preventDefault()
+        handleCloseTab()
+      }
+      
+      // Ctrl+B - Toggle Explorer
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
         e.preventDefault()
         setExplorerOpen(prev => !prev)
@@ -56,10 +175,29 @@ function InternalApp() {
     
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeTabPath, activeTab, handleSave])
+  }, [activeTabPath, handleSave, handleNewFile, handleOpenFolder, handleCloseTab])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {/* Menu Bar */}
+      <MenuBar
+        onNewFile={handleNewFile}
+        onOpenFile={handleOpenFile}
+        onOpenFolder={handleOpenFolder}
+        onSave={handleSave}
+        onSaveAll={handleSave}
+        onCloseTab={handleCloseTab}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onFind={handleFind}
+        onReplace={handleReplace}
+        onToggleExplorer={() => setExplorerOpen(prev => !prev)}
+        onToggleChat={() => setChatOpen(prev => !prev)}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onZoomReset={handleZoomReset}
+      />
+      
       {/* Tab Bar */}
       <EditorTabs />
       
@@ -132,9 +270,10 @@ function InternalApp() {
               justifyContent: 'center',
               borderTop: '1px solid #3c3c3c',
               borderBottom: '1px solid #3c3c3c',
+              opacity: 0.7,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#3c3c3c'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#2a2d2e'}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
             title="Toggle Chat"
           >
             ⌨️
@@ -221,9 +360,10 @@ function InternalApp() {
               justifyContent: 'center',
               borderTop: '1px solid #3c3c3c',
               borderBottom: '1px solid #3c3c3c',
+              opacity: 0.7,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#3c3c3c'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#2a2d2e'}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
             title="Toggle Explorer"
           >
             📁
@@ -254,7 +394,7 @@ function InternalApp() {
           </>
         )}
         <div style={{ flex: 1 }} />
-        <span>NyxIDE</span>
+        <span>NyxIDE v0.1.0</span>
       </div>
     </div>
   )

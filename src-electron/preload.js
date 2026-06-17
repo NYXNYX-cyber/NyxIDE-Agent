@@ -23,4 +23,5 @@ contextBridge.exposeInMainWorld('nyxide', {
   
   // Dialog operations
   openFolderDialog: () => ipcRenderer.invoke('dialog:open-folder'),
+  openFileDialog: () => ipcRenderer.invoke('dialog:open-file'),
 })

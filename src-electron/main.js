@@ -183,6 +183,32 @@ function createWindow() {
       return { success: false, error: error.message }
     }
   })
+
+  // Open file dialog
+  ipcMain.handle('dialog:open-file', async () => {
+    try {
+      console.log('[IPC] Opening file dialog...')
+      
+      if (!mainWindow) {
+        console.error('[IPC] mainWindow is null!')
+        return { success: false, error: 'Window not ready' }
+      }
+      
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        title: 'Open File',
+      })
+      
+      if (result.canceled) {
+        return { success: false, canceled: true, filePaths: [] }
+      }
+      
+      return { success: true, filePaths: result.filePaths }
+    } catch (error) {
+      console.error('[IPC] File dialog error:', error)
+      return { success: false, error: error.message }
+    }
+  })
 }
 
 // Wait for Electron to be ready before creating windows
