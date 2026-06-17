@@ -15,6 +15,8 @@ export default function Terminal({ visible }: TerminalProps) {
   useEffect(() => {
     if (!terminalRef.current || xtermRef.current) return
 
+    let resizeHandler: (() => void) | null = null
+
     // Small delay to ensure DOM is ready
     const initTerminal = () => {
       if (!terminalRef.current) return
@@ -93,7 +95,7 @@ export default function Terminal({ visible }: TerminalProps) {
       term.write('\x1b[1;34m$\x1b[0m ')
 
       // Handle resize
-      const handleResize = () => {
+      resizeHandler = () => {
         if (fitAddonRef.current) {
           setTimeout(() => {
             try {
@@ -105,7 +107,7 @@ export default function Terminal({ visible }: TerminalProps) {
         }
       }
 
-      window.addEventListener('resize', handleResize)
+      window.addEventListener('resize', resizeHandler)
     }
 
     // Initialize after a small delay
@@ -113,7 +115,9 @@ export default function Terminal({ visible }: TerminalProps) {
 
     return () => {
       clearTimeout(timeoutId)
-      window.removeEventListener('resize', handleResize)
+      if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler)
+      }
       if (xtermRef.current) {
         xtermRef.current.dispose()
         xtermRef.current = null
