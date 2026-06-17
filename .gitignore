@@ -60,3 +60,8 @@ Screenshot/*.jpeg
 # Agent skills (OpenCode internal)
 .agents/
 skills-lock.json
+
+# Agent instruction files (internal use only, not for public repo)
+MCP.md
+IDE_AGENT_PLANNING.md
+AGENTS.md
