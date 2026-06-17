@@ -1,11 +1,15 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import fs from 'fs'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 // Track open files for multi-tab support
-let openFiles: string[] = []
+let openFiles = []
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -32,24 +36,24 @@ function createWindow() {
   }
 
   // Handle file system operations
-  ipcMain.handle('read-file', async (event, filePath: string) => {
+  ipcMain.handle('read-file', async (event, filePath) => {
     try {
       return { success: true, content: fs.readFileSync(filePath, 'utf-8') }
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('write-file', async (event, filePath: string, content: string) => {
+  ipcMain.handle('write-file', async (event, filePath, content) => {
     try {
       fs.writeFileSync(filePath, content, 'utf-8')
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('list-directory', async (event, dirPath: string) => {
+  ipcMain.handle('list-directory', async (event, dirPath) => {
     try {
       const items = fs.readdirSync(dirPath, { withFileTypes: true })
       return {
@@ -60,15 +64,15 @@ function createWindow() {
           isFile: item.isFile(),
         })),
       }
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('search-files', async (event, directory: string, pattern: string) => {
+  ipcMain.handle('search-files', async (event, directory, pattern) => {
     try {
-      const results: string[] = []
-      const searchInDir = (dir: string) => {
+      const results = []
+      const searchInDir = (dir) => {
         const items = fs.readdirSync(dir, { withFileTypes: true })
         for (const item of items) {
           const fullPath = path.join(dir, item.name)
@@ -81,34 +85,34 @@ function createWindow() {
       }
       searchInDir(directory)
       return { success: true, results }
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('create-directory', async (event, dirPath: string) => {
+  ipcMain.handle('create-directory', async (event, dirPath) => {
     try {
       fs.mkdirSync(dirPath, { recursive: true })
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('delete-file', async (event, filePath: string) => {
+  ipcMain.handle('delete-file', async (event, filePath) => {
     try {
       fs.unlinkSync(filePath)
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('exec-command', async (event, command: string) => {
+  ipcMain.handle('exec-command', async (event, command) => {
     try {
       const { exec } = await import('child_process')
       return new Promise((resolve) => {
-        exec(command, (error: any, stdout: string, stderr: string) => {
+        exec(command, (error, stdout, stderr) => {
           if (error) {
             resolve({ success: false, error: error.message, stderr })
           } else {
@@ -116,20 +120,20 @@ function createWindow() {
           }
         })
       })
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, error: error.message }
     }
   })
 
   // File tab management
-  ipcMain.handle('open-file', (event, filePath: string) => {
+  ipcMain.handle('open-file', (event, filePath) => {
     if (!openFiles.includes(filePath)) {
       openFiles.push(filePath)
     }
     return { success: true, tabs: openFiles }
   })
 
-  ipcMain.handle('close-file', (event, filePath: string) => {
+  ipcMain.handle('close-file', (event, filePath) => {
     openFiles = openFiles.filter(f => f !== filePath)
     return { success: true, tabs: openFiles }
   })

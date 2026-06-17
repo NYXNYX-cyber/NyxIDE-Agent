@@ -6,7 +6,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite && electron .",
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && npx electron .",
     "build": "tsc && vite build && electron-builder",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -27,6 +29,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^10.0.3",
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
     "eslint": "^10.3.0",
@@ -37,7 +40,8 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vite-plugin-electron": "^1.0.4"
+    "vite-plugin-electron": "^1.0.4",
+    "wait-on": "^9.0.10"
   },
   "main": "src-electron/main.js",
   "build": {
@@ -54,10 +58,15 @@
       "category": "public.app-category.developer-tools"
     },
     "win": {
-      "target": ["portable", "nsis"]
+      "target": [
+        "portable",
+        "nsis"
+      ]
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Development"
     }
   }
