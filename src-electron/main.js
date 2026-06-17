@@ -135,15 +135,19 @@ function createWindow() {
       // Auto-enhance common commands for better terminal output
       let enhancedCommand = command
       
-      // For 'ls' without flags that control output format, add -C for column output
-      if (/^ls(\s|$)/.test(command.trim()) && !/-(C|x|1|R|l)/.test(command)) {
-        enhancedCommand = command.replace(/^ls/, 'ls -C')
+      // For 'ls' without flags that control output format, pipe through 'column'
+      if (/^ls(\s|$)/.test(command.trim()) && !/-(C|x|1|R|l|d)/.test(command)) {
+        const columns = options.columns || 120
+        enhancedCommand = `${command} | column -c ${columns} -t -s $'\t'`
       }
       
       // For 'ls -la' or 'ls -l', add --color=always for colored output
       if (/^ls\s+-[a-zA-Z]*l/.test(command.trim()) && !/--color/.test(command)) {
         enhancedCommand = command + ' --color=always'
       }
+      
+      // Use sh -c to ensure proper pipeline execution
+      enhancedCommand = `sh -c "${enhancedCommand}"`
       
       return new Promise((resolve) => {
         exec(enhancedCommand, { cwd, env, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
