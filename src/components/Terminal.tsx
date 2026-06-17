@@ -170,7 +170,7 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
       }
 
       // Execute via IPC with working directory and terminal dimensions
-      const cols = xtermRef.current?.cols || 80
+      const cols = xtermRef.current?.cols || 120  // Wider default for better formatting
       const rows = xtermRef.current?.rows || 24
       const result = await (window as any).nyxide.execCommand(command, {
         cwd: cwd,  // Will use home dir if undefined (handled in main.js)

@@ -124,10 +124,6 @@ function InternalApp() {
 
   const handleToggleTerminal = useCallback(() => {
     setTerminalOpen(prev => !prev)
-    // Terminal implementation coming in Week 3
-    if (!terminalOpen) {
-      console.log('Terminal toggle requested - implementation coming in Week 3')
-    }
   }, [terminalOpen])
 
   // Global keyboard shortcuts

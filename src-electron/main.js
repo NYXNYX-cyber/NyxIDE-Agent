@@ -126,7 +126,7 @@ function createWindow() {
       // Pass COLUMNS env var so commands like ls format output properly
       const env = {
         ...process.env,
-        COLUMNS: String(options.columns || 80),
+        COLUMNS: String(options.columns || 120),  // Wider default for better formatting
         LINES: String(options.rows || 24),
         TERM: 'xterm-256color',
         FORCE_COLOR: '1',  // Force color output
