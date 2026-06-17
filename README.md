@@ -78,8 +78,18 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 
 **Keyboard Shortcuts:**
 - ✅ Ctrl+S → Save file
+- ✅ Ctrl+N → New file
+- ✅ Ctrl+O → Open file
+- ✅ Ctrl+W → Close tab
 - ✅ Escape → Toggle chat panel
+- ✅ Ctrl+B → Toggle File Explorer
 - ✅ All Monaco shortcuts (Ctrl+F find, Ctrl+H replace, etc)
+
+**Menu Bar (NEW!):**
+- ✅ Professional VS Code-style menu (File, Edit, View, Help)
+- ✅ Click-based access in addition to keyboard shortcuts
+- ✅ Full keyboard shortcut reference
+- ✅ Dark theme matching IDE
 
 **Status Bar:**
 - ✅ Shows open files count
@@ -178,7 +188,11 @@ nyxide/
 │   ├── components/
 │   │   ├── FileExplorer.tsx    # Directory tree component
 │   │   ├── ChatPanel.tsx        # Chat interface
-│   │   └── EditorTabs.tsx       # Multi-tab system
+│   │   ├── EditorTabs.tsx       # Multi-tab system
+│   │   ├── CodeEditor.tsx       # Monaco editor wrapper
+│   │   └── MenuBar.tsx          # VS Code-style menu bar
+│   ├── context/
+│   │   └── AppContext.tsx       # Global state management
 │   ├── App.tsx          # Main split-pane layout
 │   ├── main.tsx         # React entry point
 │   └── index.css        # Global styles
