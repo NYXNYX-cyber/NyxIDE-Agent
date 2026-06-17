@@ -56,3 +56,7 @@ Screenshot/*.jpeg
 # Misc
 *.tgz
 *.tar.gz
+
+# Agent skills (OpenCode internal)
+.agents/
+skills-lock.json
