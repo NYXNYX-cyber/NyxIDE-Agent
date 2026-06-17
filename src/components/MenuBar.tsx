@@ -227,7 +227,7 @@ export default function MenuBar({
         alignItems: 'center',
         padding: '0 8px',
         gap: '2px',
-        WebkitAppRegion: 'drag' as any,
+        WebkitAppRegion: 'no-drag' as any,
       }}
     >
       <MenuBarItem label="File" items={fileMenu} />
