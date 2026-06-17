@@ -347,7 +347,7 @@ function InternalApp() {
               onClick={() => setExplorerOpen(false)}
               style={{
                 position: 'absolute',
-                top: '8px',
+                top: '36px',
                 right: '8px',
                 background: '#e0e0e0',
                 border: 'none',
