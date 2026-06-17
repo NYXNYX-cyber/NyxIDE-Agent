@@ -8,6 +8,7 @@ import CodeEditor from './components/CodeEditor'
 function InternalApp() {
   const { tabs, activeTabPath, openFile, updateFileContent, saveFile } = useAppState()
   const [chatOpen, setChatOpen] = useState(true)
+  const [explorerOpen, setExplorerOpen] = useState(true)
 
   // Get active tab content
   const activeTab = tabs.find(tab => tab.path === activeTabPath)
@@ -41,6 +42,12 @@ function InternalApp() {
         }
       }
       
+      // Ctrl+B - Toggle Explorer (VS Code standard)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault()
+        setExplorerOpen(prev => !prev)
+      }
+      
       // Escape - Toggle chat
       if (e.key === 'Escape') {
         setChatOpen(prev => !prev)
@@ -58,16 +65,38 @@ function InternalApp() {
       
       {/* Main Content Area - Split Layout */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left Panel - Chat Interface (collapsible) */}
+        {/* Left Panel - Chat Interface (20%) */}
         <div 
           style={{ 
-            width: chatOpen ? '50%' : '0%',
+            width: chatOpen ? '20%' : '0%',
+            minWidth: '200px',
+            maxWidth: '350px',
             transition: 'width 0.3s ease',
-            borderRight: '1px solid #e5e7eb',
-            overflow: 'hidden',
-            backgroundColor: '#fff',
+            borderRight: '1px solid #3c3c3c',
+            backgroundColor: '#ffffff',
+            position: 'relative',
           }}
         >
+          <button
+            onClick={() => setChatOpen(false)}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: '#e0e0e0',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              zIndex: 10,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
+          >
+            ×
+          </button>
+          
           <div style={{ 
             height: '100%', 
             display: 'flex', 
@@ -76,15 +105,42 @@ function InternalApp() {
             color: '#888',
             fontSize: '14px',
             textAlign: 'center',
+            paddingTop: '40px',
           }}>
             <div>
-              <p style={{ marginBottom: '8px' }}>💬 Chat Assistant</p>
-              <p style={{ fontSize: '12px' }}>AI Integration coming in Week 2!</p>
+              <p style={{ marginBottom: '8px', fontWeight: 600 }}>💬 AI Assistant</p>
+              <p style={{ fontSize: '12px', color: '#666' }}>AI Integration Week 2</p>
             </div>
           </div>
         </div>
 
-        {/* Center Panel - Monaco Editor */}
+        {/* Toggle button for chat */}
+        {!chatOpen && (
+          <button
+            onClick={() => setChatOpen(true)}
+            style={{
+              width: '24px',
+              height: '100%',
+              background: '#2a2d2e',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderTop: '1px solid #3c3c3c',
+              borderBottom: '1px solid #3c3c3c',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#3c3c3c'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#2a2d2e'}
+            title="Toggle Chat"
+          >
+            ⌨️
+          </button>
+        )}
+
+        {/* Center Panel - Monaco Editor (Main) */}
         <div style={{ 
           flex: 1, 
           backgroundColor: '#1e1e1e',
@@ -121,10 +177,57 @@ function InternalApp() {
           )}
         </div>
         
-        {/* Right Panel - File Explorer */}
-        <div style={{ width: '280px', borderLeft: '1px solid #3c3c3c', overflow: 'hidden', backgroundColor: '#252526' }}>
+        {/* Right Panel - File Explorer (280px) */}
+        <div style={{ width: explorerOpen ? '280px' : '0', borderLeft: '1px solid #3c3c3c', overflow: 'hidden', backgroundColor: '#252526', position: 'relative' }}>
+          <button
+            onClick={() => setExplorerOpen(false)}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: '#e0e0e0',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              zIndex: 10,
+              color: '#333',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
+          >
+            ×
+          </button>
+          
           <FileExplorer onFileClick={handleFileClick} />
         </div>
+
+        {/* Toggle button for explorer */}
+        {!explorerOpen && (
+          <button
+            onClick={() => setExplorerOpen(true)}
+            style={{
+              width: '24px',
+              height: '100%',
+              background: '#2a2d2e',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderTop: '1px solid #3c3c3c',
+              borderBottom: '1px solid #3c3c3c',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#3c3c3c'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#2a2d2e'}
+            title="Toggle Explorer"
+          >
+            📁
+          </button>
+        )}
       </div>
       
       {/* Status Bar */}
