@@ -5,6 +5,7 @@ node_modules/
 
 # Build outputs
 dist/
+release/
 build/
 out/
 *.exe
@@ -43,7 +44,7 @@ Desktop.ini
 .env.local
 .env.*.local
 
-# Screenshot directory (empty folder tracking)
+# Screenshot directory (keep empty folder)
 Screenshot/*.png
 Screenshot/*.jpg
 Screenshot/*.jpeg
@@ -51,12 +52,6 @@ Screenshot/*.jpeg
 
 # TypeScript cache
 *.tsbuildinfo
-
-# Electron build artifacts
-electron-builder.yml
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
 # Misc
 *.tgz

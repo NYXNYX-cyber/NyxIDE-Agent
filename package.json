@@ -1,33 +1,64 @@
 {
   "name": "nyxide",
-  "version": "0.1.0",
   "description": "AI-Powered Desktop IDE with Monaco Editor and Custom AI Agent Integration",
-  "main": "dist-electron/main.js",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
-    "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:e2e": "playwright test"
-  },
-  "keywords": [
-    "ide",
-    "electron",
-    "react",
-    "monaco-editor",
-    "ai-agent",
-    "developer-tools"
-  ],
   "author": "NYXNYX-cyber",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NYXNYX-cyber/NyxIDE-Agent.git"
+  "private": false,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite && electron .",
+    "build": "tsc && vite build && electron-builder",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
-  "bugs": {
-    "url": "https://github.com/NYXNYX-cyber/NyxIDE-Agent/issues"
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "antd": "^6.4.4",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-split-pane": "^3.2.0",
+    "uuid": "^14.0.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
   },
-  "homepage": "https://github.com/NYXNYX-cyber/NyxIDE-Agent#readme"
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "playwright": "^1.61.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12",
+    "vite-plugin-electron": "^1.0.4"
+  },
+  "main": "src-electron/main.js",
+  "build": {
+    "appId": "com.nyxiside.app",
+    "productName": "NyxIDE",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": ["portable", "nsis"]
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Development"
+    }
+  }
 }

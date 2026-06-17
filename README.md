@@ -23,9 +23,9 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 | Feature | Status | Target |
 |---------|--------|--------|
 | Project Planning | ✅ Complete | Done |
-| Foundation (Window, Monaco, File Tree) | ⏳ Pending | Week 1 |
-| AI API Integration | ⏳ Pending | Week 2 |
-| Chat Interface & Streaming | ⏳ Pending | Week 2 |
+| Foundation (Window, Monaco, File Tree) | ✅ Complete | Week 1 DONE |
+| AI API Integration | ⏳ In Progress | Week 2 |
+| Chat Interface & Streaming | ⏳ In Progress | Week 2 |
 | Multi-tab Editing | ⏳ Pending | Week 3 |
 | Terminal Integration | ⏳ Pending | Week 3 |
 | Diff Viewer & Approval Workflow | ⏳ Pending | Week 3 |
@@ -36,47 +36,26 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 
 ## 🛠️ Tech Stack
 
-- **Desktop Framework:** Electron 28+
+- **Desktop Framework:** Electron 28+ (42.4.1)
 - **Frontend:** React 18 + TypeScript
-- **Build Tool:** Vite
-- **Code Editor:** Monaco Editor
+- **Build Tool:** Vite 8.0.12
+- **Code Editor:** Monaco Editor (via @monaco-editor/react)
 - **Terminal:** xterm.js
-- **UI Components:** Ant Design / Chakra UI
-- **State Management:** Zustand
-- **Packaging:** electron-builder
+- **UI Components:** Ant Design
+- **State Management:** Zustand (planned)
+- **Packaging:** electron-builder 26.15.3
 
-## 📚 Documentation
-
-See [IDE_AGENT_PLANNING.md](./IDE_AGENT_PLANNING.md) for:
-- Detailed feature specifications
-- API configuration and authentication
-- Implementation timeline and phases
-- Risk assessment and mitigations
-- Tech stack rationale
-
-See [MCP.md](./MCP.md) for:
-- Image analysis rules and workflows
-- MCP tool usage guidelines
-- Troubleshooting guides
-
-See [AGENTS.md](./AGENTS.md) for:
-- Quick reference for development agents
-- Critical gotchas and constraints
-- Project-specific conventions
-
-## 🏗️ Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-Before you can build NyxIDE:
-
 ```bash
 Node.js 18+ (LTS recommended)
-npm or yarn or pnpm
+npm
 Git
 ```
 
-### Initial Setup (Once Built)
+### Installation
 
 ```bash
 # Clone repository
@@ -86,22 +65,67 @@ cd NyxIDE-Agent
 # Install dependencies
 npm install
 
-# Start development mode
+# Start development mode (Vite dev server + Electron)
 npm run dev
 
 # Build production binaries
 npm run build
 ```
 
+### Development Commands
+
+```bash
+npm run dev      # Start Vite dev server + Electron window
+npm run build    # Build TypeScript + Vite + package for production
+npm run lint     # Run ESLint checks
+npm run preview  # Preview built production files
+```
+
+## 🏗️ Week 1 Implementation Progress
+
+✅ **Foundation Complete!**
+
+- ✅ Electron main process with IPC handlers for file operations
+- ✅ Preload script with secure context bridge
+- ✅ Split-pane layout (Chat 50%, Editor 50%, File Explorer 280px)
+- ✅ File Explorer component (read-only, tree view)
+- ✅ Chat panel UI with placeholder AI responses
+- ✅ Multi-tab system with close buttons
+- ✅ Vite build system configured
+- ✅ electron-builder config for Windows .exe & Linux AppImage
+- ✅ Production build generating AppImage successfully (108MB)
+
+### Architecture
+
+```
+nyxide/
+├── src-electron/
+│   ├── main.js         # Electron main process + IPC handlers
+│   └── preload.js      # Context bridge (security)
+├── src/
+│   ├── components/
+│   │   ├── FileExplorer.tsx    # Directory tree component
+│   │   ├── ChatPanel.tsx        # Chat interface
+│   │   └── EditorTabs.tsx       # Multi-tab system
+│   ├── App.tsx          # Main split-pane layout
+│   ├── main.tsx         # React entry point
+│   └── index.css        # Global styles
+├── dist/                # Vite build output
+├── release/             # electron-builder output
+├── vite.config.ts       # Vite configuration
+├── package.json         # Dependencies + electron-builder config
+└── tsconfig.json        # TypeScript configuration
+```
+
 ## 🔑 Configuration
 
-NyxIDE uses an external AI API service. Configure via Settings UI:
+NyxIDE uses an external AI API service. Configure via Settings UI (Week 4):
 
 **Default Endpoint:** `http://localhost:1430/v1`  
 **Model:** `kiro/claude-sonnet-4.5-thinking-agentic`  
 **Auth:** Bearer token in Authorization header
 
-See planning docs for detailed API spec.
+See [IDE_AGENT_PLANNING.md](./IDE_AGENT_PLANNING.md) for detailed API spec.
 
 ## 🎨 Design Philosophy
 
@@ -118,15 +142,11 @@ Dark mode default (VS Code Dark+) with light mode toggle
 4. **Fast startup** - < 3 seconds cold start target
 5. **Memory efficient** - < 500MB RAM idle target
 
-## 🚧 Current Development Phase
+## 📚 Documentation
 
-This repository contains **planning documentation only**. The actual application code will be created during Week 1 implementation.
-
-Files present:
-- ✅ Project planning specification
-- ✅ MCP usage guidelines
-- ✅ Agent instruction document
-- ❌ Application source code (coming soon)
+- [IDE_AGENT_PLANNING.md](./IDE_AGENT_PLANNING.md) - Full project specification, timeline, tech stack rationale
+- [MCP.md](./MCP.md) - Image analysis rules, MCP tool usage guides
+- [AGENTS.md](./AGENTS.md) - Quick reference for development agents, critical gotchas
 
 ## 🤝 Contributing
 
@@ -134,9 +154,10 @@ This is currently a personal/open-source project. We welcome contributions!
 
 When contributing:
 1. Follow existing documentation patterns
-2. Add tests for new features
+2. Add tests for new features (Vitest + Playwright)
 3. Update relevant MD files when changing specs
 4. Keep commit messages descriptive
+5. Follow TypeScript strict mode
 
 ## 📄 License
 
@@ -148,4 +169,4 @@ By using this software, you agree to the terms and conditions of the Apache Lice
 
 **Made with ❤️ for developers who want AI-assisted coding done right**
 
-*Status: Planning phase complete. Building starts Week 1.*
+*Status: Week 1 complete • Building Week 2 features now*
