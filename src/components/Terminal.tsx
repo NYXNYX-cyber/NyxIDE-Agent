@@ -5,9 +5,10 @@ import 'xterm/css/xterm.css'
 
 interface TerminalProps {
   visible: boolean
+  cwd?: string  // Working directory from Explorer
 }
 
-export default function Terminal({ visible }: TerminalProps) {
+export default function Terminal({ visible, cwd }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -168,8 +169,14 @@ export default function Terminal({ visible }: TerminalProps) {
         return
       }
 
-      // Execute via IPC
-      const result = await (window as any).nyxide.execCommand(command)
+      // Execute via IPC with working directory and terminal dimensions
+      const cols = xtermRef.current?.cols || 80
+      const rows = xtermRef.current?.rows || 24
+      const result = await (window as any).nyxide.execCommand(command, {
+        cwd: cwd,  // Will use home dir if undefined (handled in main.js)
+        columns: cols,
+        rows: rows,
+      })
       
       if (result.success) {
         // Write stdout directly without adding extra newlines

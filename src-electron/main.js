@@ -115,13 +115,26 @@ function createWindow() {
     }
   })
 
-  ipcMain.handle('exec-command', async (event, command) => {
+  ipcMain.handle('exec-command', async (event, command, options = {}) => {
     try {
       const { exec } = await import('child_process')
+      const os = await import('os')
+      
+      // Determine working directory
+      const cwd = options.cwd || os.homedir()
+      
+      // Pass COLUMNS env var so commands like ls format output properly
+      const env = {
+        ...process.env,
+        COLUMNS: String(options.columns || 80),
+        LINES: String(options.rows || 24),
+        TERM: 'xterm-256color',
+      }
+      
       return new Promise((resolve) => {
-        exec(command, (error, stdout, stderr) => {
+        exec(command, { cwd, env, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
           if (error) {
-            resolve({ success: false, error: error.message, stderr })
+            resolve({ success: false, error: error.message, stderr, stdout })
           } else {
             resolve({ success: true, stdout, stderr })
           }

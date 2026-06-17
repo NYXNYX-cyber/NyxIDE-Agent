@@ -12,6 +12,7 @@ function InternalApp() {
   const [chatOpen, setChatOpen] = useState(true)
   const [explorerOpen, setExplorerOpen] = useState(true)
   const [terminalOpen, setTerminalOpen] = useState(false)
+  const [currentFolder, setCurrentFolder] = useState<string>('')
 
   // Get active tab content
   const activeTab = tabs.find(tab => tab.path === activeTabPath)
@@ -366,7 +367,7 @@ function InternalApp() {
             </button>
           )}
           
-          <FileExplorer onFileClick={handleFileClick} />
+          <FileExplorer onFileClick={handleFileClick} onFolderChange={setCurrentFolder} />
         </div>
 
         {/* Toggle button for explorer */}
@@ -458,7 +459,7 @@ function InternalApp() {
               ×
             </button>
             
-            <Terminal visible={terminalOpen} />
+            <Terminal visible={terminalOpen} cwd={currentFolder || undefined} />
           </>
         )}
       </div>

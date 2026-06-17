@@ -10,6 +10,7 @@ interface FileItem {
 
 interface FileExplorerProps {
   onFileClick?: (path: string) => void
+  onFolderChange?: (path: string) => void
 }
 
 interface TreeNode extends FileItem {
@@ -18,7 +19,7 @@ interface TreeNode extends FileItem {
   isExpanded?: boolean
 }
 
-export default function FileExplorer({ onFileClick }: FileExplorerProps) {
+export default function FileExplorer({ onFileClick, onFolderChange }: FileExplorerProps) {
   const [rootPath, setRootPath] = useState<string>('')
   const [treeData, setTreeData] = useState<TreeNode[]>([])
   const [selectedPath, setSelectedPath] = useState<string>('')
@@ -29,6 +30,10 @@ export default function FileExplorer({ onFileClick }: FileExplorerProps) {
       loadDirectory(rootPath).then(items => {
         setTreeData(items)
       })
+      // Notify parent about folder change
+      if (onFolderChange) {
+        onFolderChange(rootPath)
+      }
     }
   }, [rootPath])
 

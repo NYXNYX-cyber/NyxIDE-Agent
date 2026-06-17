@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld('nyxide', {
   deleteFile: (path) => ipcRenderer.invoke('delete-file', path),
   
   // Command execution
-  execCommand: (command) => ipcRenderer.invoke('exec-command', command),
+  execCommand: (command, options) => ipcRenderer.invoke('exec-command', command, options),
   
   // Tab management
   openFile: (path) => ipcRenderer.invoke('open-file', path),
