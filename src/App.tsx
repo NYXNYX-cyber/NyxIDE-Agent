@@ -10,6 +10,7 @@ function InternalApp() {
   const { tabs, activeTabPath, openFile, updateFileContent, saveFile, closeFile } = useAppState()
   const [chatOpen, setChatOpen] = useState(true)
   const [explorerOpen, setExplorerOpen] = useState(true)
+  const [terminalOpen, setTerminalOpen] = useState(false)
 
   // Get active tab content
   const activeTab = tabs.find(tab => tab.path === activeTabPath)
@@ -119,6 +120,14 @@ function InternalApp() {
     document.body.style.fontSize = ''
   }, [])
 
+  const handleToggleTerminal = useCallback(() => {
+    setTerminalOpen(prev => !prev)
+    // Terminal implementation coming in Week 3
+    if (!terminalOpen) {
+      console.log('Terminal toggle requested - implementation coming in Week 3')
+    }
+  }, [terminalOpen])
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -177,6 +186,19 @@ function InternalApp() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [activeTabPath, handleSave, handleNewFile, handleOpenFolder, handleCloseTab])
 
+  // Add terminal keydown handler separately
+  useEffect(() => {
+    const handleTerminalKey = (e: KeyboardEvent) => {
+      // Ctrl+` - Toggle Terminal
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault()
+        handleToggleTerminal()
+      }
+    }
+    window.addEventListener('keydown', handleTerminalKey)
+    return () => window.removeEventListener('keydown', handleTerminalKey)
+  }, [handleToggleTerminal])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {/* Menu Bar */}
@@ -193,6 +215,7 @@ function InternalApp() {
         onReplace={handleReplace}
         onToggleExplorer={() => setExplorerOpen(prev => !prev)}
         onToggleChat={() => setChatOpen(prev => !prev)}
+        onToggleTerminal={handleToggleTerminal}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onZoomReset={handleZoomReset}
@@ -318,27 +341,29 @@ function InternalApp() {
         </div>
         
         {/* Right Panel - File Explorer (280px) */}
-        <div style={{ width: explorerOpen ? '280px' : '0', borderLeft: '1px solid #3c3c3c', overflow: 'hidden', backgroundColor: '#252526', position: 'relative' }}>
-          <button
-            onClick={() => setExplorerOpen(false)}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: '#e0e0e0',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '4px 8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              zIndex: 10,
-              color: '#333',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
-          >
-            ×
-          </button>
+        <div style={{ width: explorerOpen ? '280px' : '0', minWidth: explorerOpen ? '280px' : '0px', maxWidth: explorerOpen ? '400px' : '0px', borderLeft: explorerOpen ? '1px solid #3c3c3c' : 'none', overflow: 'hidden', backgroundColor: '#252526', position: 'relative', transition: 'all 0.3s ease' }}>
+          {explorerOpen && (
+            <button
+              onClick={() => setExplorerOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                background: '#e0e0e0',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                zIndex: 10,
+                color: '#333',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
+            >
+              ×
+            </button>
+          )}
           
           <FileExplorer onFileClick={handleFileClick} />
         </div>

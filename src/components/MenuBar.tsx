@@ -157,6 +157,7 @@ interface MenuBarProps {
   onReplace?: () => void
   onToggleExplorer?: () => void
   onToggleChat?: () => void
+  onToggleTerminal?: () => void
   onZoomIn?: () => void
   onZoomOut?: () => void
   onZoomReset?: () => void
@@ -175,6 +176,7 @@ export default function MenuBar({
   onReplace,
   onToggleExplorer,
   onToggleChat,
+  onToggleTerminal,
   onZoomIn,
   onZoomOut,
   onZoomReset,
@@ -203,6 +205,7 @@ export default function MenuBar({
 
   const viewMenu: MenuItem[] = [
     { label: 'Toggle Explorer', shortcut: `${cmdKey}+B`, onClick: onToggleExplorer },
+    { label: 'Toggle Terminal', shortcut: `${cmdKey}+\``, onClick: onToggleTerminal },
     { label: 'Toggle Chat', shortcut: 'Escape', onClick: onToggleChat },
     { divider: true, label: '' },
     { label: 'Zoom In', shortcut: `${cmdKey}++`, onClick: onZoomIn },
