@@ -25,6 +25,8 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 | Project Planning | ✅ Complete | Done |
 | Foundation (Window, Monaco, File Tree) | ✅ Complete | Week 1 DONE |
 | Core Editor Features | ✅ Complete | Phase 1 DONE |
+| Menu Bar (File, Edit, View, Help) | ✅ Complete | Phase 1 DONE |
+| Collapsible Panels (Chat/Explorer) | ✅ Complete | Phase 1 DONE |
 | AI API Integration | ⏳ Pending | Week 2 |
 | Chat Interface & Streaming | ⏳ Pending | Week 2 |
 | Multi-tab Editing | ✅ Complete | Phase 1 DONE |
@@ -53,12 +55,21 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 
 ### ✅ What Works:
 
+**Menu Bar (NEW!):**
+- ✅ Professional VS Code-style menu (File, Edit, View, Help)
+- ✅ Click-based access in addition to keyboard shortcuts
+- ✅ Full keyboard shortcut reference
+- ✅ Dark theme matching IDE
+- ✅ Dropdown with smooth animations
+- ✅ Auto-detect platform (Ctrl/⌘)
+
 **File Explorer:**
 - ✅ Open Folder dialog (Electron native dialog)
 - ✅ Recursive tree loading (expand/collapse folders)
 - ✅ Click file → Opens in Monaco editor
 - ✅ File type icons (📁 folders, 📜 JS/TS, 🐍 Python, etc)
 - ✅ Visual feedback (selected state, hover effects)
+- ✅ Collapsible with toggle button (Ctrl+B)
 
 **Monaco Editor:**
 - ✅ Full editor integration (VS Code Dark+ theme)
@@ -76,6 +87,11 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 - ✅ Active tab highlighting
 - ✅ Sync between File Explorer and Tabs
 
+**Chat Panel:**
+- ✅ Collapsible design (20% width, fully hides to 0px)
+- ✅ Toggle button (Escape key)
+- ✅ Placeholder for AI integration (Week 2)
+
 **Keyboard Shortcuts:**
 - ✅ Ctrl+S → Save file
 - ✅ Ctrl+N → New file
@@ -85,27 +101,49 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 - ✅ Ctrl+B → Toggle File Explorer
 - ✅ All Monaco shortcuts (Ctrl+F find, Ctrl+H replace, etc)
 
-**Menu Bar (NEW!):**
-- ✅ Professional VS Code-style menu (File, Edit, View, Help)
-- ✅ Click-based access in addition to keyboard shortcuts
-- ✅ Full keyboard shortcut reference
-- ✅ Dark theme matching IDE
-
 **Status Bar:**
 - ✅ Shows open files count
 - ✅ Current file name & path
 - ✅ Language indicator
 - ✅ Modified status
 - ✅ Encoding (UTF-8) & line ending (LF)
+- ✅ Version display (NyxIDE v0.1.0)
 
 ### 🎯 Workflow Test (All Passed):
-1. ✅ Open Folder → Select directory → Tree populates
-2. ✅ Expand folder → Children load with spinner
-3. ✅ Click file → Opens in new tab with content
-4. ✅ Edit file → Modified indicator (●) appears
-5. ✅ Ctrl+S → File saved → Indicator disappears
-6. ✅ Close tab with unsaved → Prompt "Save changes?"
-7. ✅ Switch tabs → Monaco updates content
+
+1. ✅ **Menu Bar Test:**
+   - Click "File" menu → See dropdown with options
+   - Click "File" → "New File" → Enter filename → File created
+   - Click "File" → "Open Folder" → Select directory
+   - Click "View" → "Toggle Explorer" → Explorer hides/shows
+   - Press Ctrl+B → Same as menu toggle
+   - Click "Help" → "About NyxIDE" → See version info
+
+2. ✅ **File Explorer Test:**
+   - Click "Open Folder" button in Explorer
+   - Select directory → Tree populates
+   - Expand folder → Children load with spinner
+   - Click file → Opens in new tab with content
+
+3. ✅ **Editor Workflow:**
+   - Edit file → Modified indicator (●) appears
+   - Ctrl+S → File saved → Indicator disappears
+   - Open another file → Second tab appears
+   - Switch tabs → Monaco updates content
+
+4. ✅ **Panel Management:**
+   - Click "×" on Chat panel → Fully hides (0px)
+   - Click "⌨️" button → Chat panel returns
+   - Click "×" on Explorer → Hides
+   - Click "📁" button → Explorer returns
+   - Press Escape → Toggle Chat
+   - Press Ctrl+B → Toggle Explorer
+
+5. ✅ **Tab Management:**
+   - Close tab (unmodified) → Closes immediately
+   - Close tab (modified) → Prompts "Save changes?"
+   - Click "OK" → Saves and closes
+   - Click "Cancel" → Keeps tab open
 
 ### 📦 Build Success:
 - ✅ TypeScript compilation passing
@@ -255,4 +293,4 @@ By using this software, you agree to the terms and conditions of the Apache Lice
 
 **Made with ❤️ for developers who want AI-assisted coding done right**
 
-*Status: Week 1 complete • Building Week 2 features now*
+*Status: Phase 1 Complete • Menu Bar Added • UI Polished • Ready for Week 2 AI Integration*
