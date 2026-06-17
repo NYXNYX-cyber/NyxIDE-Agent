@@ -15,84 +15,110 @@ export default function Terminal({ visible }: TerminalProps) {
   useEffect(() => {
     if (!terminalRef.current || xtermRef.current) return
 
-    // Initialize xterm
-    const term = new XTerm({
-      cursorBlink: true,
-      fontSize: 14,
-      fontFamily: 'Consolas, "Courier New", monospace',
-      theme: {
-        background: '#1e1e1e',
-        foreground: '#cccccc',
-        cursor: '#cccccc',
-      },
-    })
+    // Small delay to ensure DOM is ready
+    const initTerminal = () => {
+      if (!terminalRef.current) return
 
-    const fitAddon = new FitAddon()
-    term.loadAddon(fitAddon)
-    
-    term.open(terminalRef.current)
-    fitAddon.fit()
+      // Initialize xterm
+      const term = new XTerm({
+        cursorBlink: true,
+        fontSize: 14,
+        fontFamily: 'Consolas, "Courier New", monospace',
+        theme: {
+          background: '#1e1e1e',
+          foreground: '#cccccc',
+          cursor: '#cccccc',
+        },
+      })
 
-    xtermRef.current = term
-    fitAddonRef.current = fitAddon
+      const fitAddon = new FitAddon()
+      term.loadAddon(fitAddon)
+      
+      // Open terminal
+      term.open(terminalRef.current!)
+      
+      // Fit after a small delay to ensure dimensions are available
+      setTimeout(() => {
+        try {
+          fitAddon.fit()
+        } catch (error) {
+          console.error('Failed to fit terminal:', error)
+        }
+      }, 50)
 
-    // Welcome message
-    term.writeln('\x1b[1;32mNyxIDE Terminal v0.1.0\x1b[0m')
-    term.writeln('\x1b[90mType "help" for available commands\x1b[0m')
-    term.writeln('')
+      xtermRef.current = term
+      fitAddonRef.current = fitAddon
 
-    // Handle terminal input
-    let currentLine = ''
-    
-    term.onData((data) => {
-      if (data === '\r') {
-        // Enter key
-        term.write('\r\n')
-        
-        if (currentLine.trim()) {
-          // Execute command via IPC
-          executeCommand(currentLine.trim(), term)
-        } else {
-          // Empty command, just show prompt
+      // Welcome message
+      term.writeln('\x1b[1;32mNyxIDE Terminal v0.1.0\x1b[0m')
+      term.writeln('\x1b[90mType "help" for available commands\x1b[0m')
+      term.writeln('')
+
+      // Handle terminal input
+      let currentLine = ''
+      
+      term.onData((data) => {
+        if (data === '\r') {
+          // Enter key
+          term.write('\r\n')
+          
+          if (currentLine.trim()) {
+            // Execute command via IPC
+            executeCommand(currentLine.trim(), term)
+          } else {
+            // Empty command, just show prompt
+            term.write('\x1b[1;34m$\x1b[0m ')
+          }
+          
+          currentLine = ''
+        } else if (data === '\x7f') {
+          // Backspace
+          if (currentLine.length > 0) {
+            currentLine = currentLine.slice(0, -1)
+            term.write('\b \b')
+          }
+        } else if (data === '\x03') {
+          // Ctrl+C
+          term.write('^C\r\n')
+          currentLine = ''
           term.write('\x1b[1;34m$\x1b[0m ')
+        } else {
+          // Regular character
+          currentLine += data
+          term.write(data)
         }
-        
-        currentLine = ''
-      } else if (data === '\x7f') {
-        // Backspace
-        if (currentLine.length > 0) {
-          currentLine = currentLine.slice(0, -1)
-          term.write('\b \b')
+      })
+
+      // Show initial prompt
+      term.write('\x1b[1;34m$\x1b[0m ')
+
+      // Handle resize
+      const handleResize = () => {
+        if (fitAddonRef.current) {
+          setTimeout(() => {
+            try {
+              fitAddonRef.current?.fit()
+            } catch (error) {
+              console.error('Failed to fit terminal on resize:', error)
+            }
+          }, 50)
         }
-      } else if (data === '\x03') {
-        // Ctrl+C
-        term.write('^C\r\n')
-        currentLine = ''
-        term.write('\x1b[1;34m$\x1b[0m ')
-      } else {
-        // Regular character
-        currentLine += data
-        term.write(data)
       }
-    })
 
-    // Show initial prompt
-    term.write('\x1b[1;34m$\x1b[0m ')
-
-    // Handle resize
-    const handleResize = () => {
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit()
-      }
+      window.addEventListener('resize', handleResize)
     }
 
-    window.addEventListener('resize', handleResize)
+    // Initialize after a small delay
+    const timeoutId = setTimeout(initTerminal, 100)
 
     return () => {
+      clearTimeout(timeoutId)
       window.removeEventListener('resize', handleResize)
-      term.dispose()
-      xtermRef.current = null
-      fitAddonRef.current = null
+      if (xtermRef.current) {
+        xtermRef.current.dispose()
+        xtermRef.current = null
+        fitAddonRef.current = null
+      }
     }
   }, [])
 
@@ -100,8 +126,12 @@ export default function Terminal({ visible }: TerminalProps) {
     // Fit terminal when visibility changes
     if (visible && fitAddonRef.current) {
       setTimeout(() => {
-        fitAddonRef.current?.fit()
-      }, 100)
+        try {
+          fitAddonRef.current?.fit()
+        } catch (error) {
+          console.error('Failed to fit terminal on visibility change:', error)
+        }
+      }, 150)
     }
   }, [visible])
 
@@ -138,11 +168,15 @@ export default function Terminal({ visible }: TerminalProps) {
       const result = await (window as any).nyxide.execCommand(command)
       
       if (result.success) {
+        // Write stdout directly without adding extra newlines
         if (result.stdout) {
-          term.writeln(result.stdout)
+          // Remove trailing newline and write as-is
+          const output = result.stdout.replace(/\n$/, '')
+          term.writeln(output)
         }
         if (result.stderr && !result.stdout) {
-          term.writeln(`\x1b[31m${result.stderr}\x1b[0m`)
+          const errorOutput = result.stderr.replace(/\n$/, '')
+          term.writeln(`\x1b[31m${errorOutput}\x1b[0m`)
         }
       } else {
         term.writeln(`\x1b[31mError: ${result.error || 'Command failed'}\x1b[0m`)
