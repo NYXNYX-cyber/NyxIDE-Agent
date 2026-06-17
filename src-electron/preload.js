@@ -20,4 +20,7 @@ contextBridge.exposeInMainWorld('nyxide', {
   
   // Current working directory
   getCwd: () => ipcRenderer.invoke('get-cwd'),
+  
+  // Dialog operations
+  openFolderDialog: () => ipcRenderer.invoke('dialog:open-folder'),
 })

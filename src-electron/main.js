@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -145,6 +145,24 @@ function createWindow() {
   // Current working directory
   ipcMain.handle('get-cwd', () => {
     return { cwd: process.cwd() }
+  })
+
+  // Open folder dialog
+  ipcMain.handle('dialog:open-folder', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'],
+        title: 'Open Folder',
+      })
+      
+      if (result.canceled) {
+        return { success: false, canceled: true }
+      }
+      
+      return { success: true, path: result.filePaths[0] }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
   })
 }
 

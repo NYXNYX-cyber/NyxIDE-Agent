@@ -1,111 +1,187 @@
 import { useState, useEffect } from 'react'
-import { FolderOutlined, FileOutlined } from '@ant-design/icons'
+import { FolderOutlined, FolderOpenOutlined, FileOutlined } from '@ant-design/icons'
 
 interface FileItem {
   name: string
   isDirectory: boolean
   isFile: boolean
+  path: string
 }
 
 interface FileExplorerProps {
-  rootPath?: string
+  onFileClick?: (path: string) => void
 }
 
-export default function FileExplorer({ rootPath = '' }: FileExplorerProps) {
-  const [cwd, setCwd] = useState<string>('')
-  const [items, setItems] = useState<FileItem[]>([])
-  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
-  const [currentPath, setCurrentPath] = useState<string>(rootPath)
+interface TreeNode extends FileItem {
+  children?: TreeNode[]
+  isLoading?: boolean
+  isExpanded?: boolean
+}
 
-  // Get current working directory on mount
+export default function FileExplorer({ onFileClick }: FileExplorerProps) {
+  const [rootPath, setRootPath] = useState<string>('')
+  const [treeData, setTreeData] = useState<TreeNode[]>([])
+  const [selectedPath, setSelectedPath] = useState<string>('')
+
+  // Load root directory when rootPath changes
   useEffect(() => {
-    if ((window as any).nyxide?.getCwd) {
-      ;(window as any).nyxide.getCwd().then(({ cwd }: { cwd: string }) => {
-        setCwd(cwd)
-        setCurrentPath(cwd)
-        listDirectory(cwd)
+    if (rootPath) {
+      loadDirectory(rootPath).then(items => {
+        setTreeData(items)
       })
     }
-  }, [])
+  }, [rootPath])
 
-  const listDirectory = async (path: string) => {
+  const loadDirectory = async (dirPath: string): Promise<TreeNode[]> => {
     try {
-      const result = await (window as any).nyxide.listDirectory(path)
+      const result = await (window as any).nyxide.listDirectory(dirPath)
       if (result.success) {
-        setItems(result.items || [])
-      } else {
-        console.error('Failed to list directory:', result.error)
+        return (result.items || []).map((item: FileItem) => ({
+          ...item,
+          path: dirPath + '/' + item.name,
+          isExpanded: false,
+          isLoading: false,
+          children: item.isDirectory ? [] : undefined,
+        }))
+      }
+      return []
+    } catch (error) {
+      console.error('Error loading directory:', error)
+      return []
+    }
+  }
+
+  const handleOpenFolder = async () => {
+    try {
+      const result = await (window as any).nyxide.openFolderDialog()
+      if (result.success && result.path) {
+        setRootPath(result.path)
       }
     } catch (error) {
-      console.error('Error listing directory:', error)
+      console.error('Error opening folder:', error)
     }
   }
 
-  const handleItemClick = async (item: FileItem) => {
-    if (item.isDirectory) {
-      const newPath = currentPath ? `${currentPath}/${item.name}` : item.name
-      setCurrentPath(newPath)
-      listDirectory(newPath)
-      
-      // Expand directory
-      const newExpanded = new Set(expandedDirs)
-      newExpanded.add(newPath)
-      setExpandedDirs(newExpanded)
+  const toggleDirectory = async (node: TreeNode, path: number[]) => {
+    const newTreeData = [...treeData]
+    let current = newTreeData
+    
+    // Navigate to the node
+    for (let i = 0; i < path.length - 1; i++) {
+      current = current[path[i]].children || []
     }
-  }
-
-  const toggleExpand = (dirName: string) => {
-    const newExpanded = new Set(expandedDirs)
-    if (newExpanded.has(dirName)) {
-      newExpanded.delete(dirName)
+    
+    const targetNode = current[path[path.length - 1]]
+    
+    if (targetNode.isExpanded) {
+      // Collapse
+      targetNode.isExpanded = false
     } else {
-      newExpanded.add(dirName)
+      // Expand - load children if not loaded yet
+      targetNode.isExpanded = true
+      if (targetNode.children && targetNode.children.length === 0) {
+        targetNode.isLoading = true
+        setTreeData([...newTreeData])
+        
+        const children = await loadDirectory(targetNode.path)
+        targetNode.children = children
+        targetNode.isLoading = false
+      }
     }
-    setExpandedDirs(newExpanded)
+    
+    setTreeData(newTreeData)
   }
 
-  const renderTree = () => {
-    return items.map((item, index) => {
-      const key = currentPath ? `${currentPath}/${item.name}` : item.name
-      const isExpanded = expandedDirs.has(key)
+  const handleItemClick = (item: TreeNode) => {
+    setSelectedPath(item.path)
+    if (item.isFile && onFileClick) {
+      onFileClick(item.path)
+    }
+  }
+
+  const getFileIcon = (name: string, isDirectory: boolean) => {
+    if (isDirectory) return '📁'
+    const ext = name.split('.').pop()?.toLowerCase()
+    const iconMap: Record<string, string> = {
+      js: '📜', ts: '📜', jsx: '⚛️', tsx: '⚛️',
+      md: '📝', txt: '📄', json: '🔧',
+      py: '🐍', go: '🐹', rs: '🦀',
+      html: '🌐', css: '🎨', scss: '🎨',
+      java: '☕', c: '🔵', cpp: '🔵',
+    }
+    return iconMap[ext || ''] || '📄'
+  }
+
+  const renderTreeNode = (nodes: TreeNode[], path: number[], depth: number = 0) => {
+    return nodes.map((node, index) => {
+      const currentPath = [...path, index]
+      const isSelected = selectedPath === node.path
       
       return (
-        <div key={index} style={{ marginLeft: 0 }}>
+        <div key={node.path}>
           <div
-            onClick={() => handleItemClick(item)}
+            onClick={() => {
+              if (node.isDirectory) {
+                toggleDirectory(node, currentPath)
+              } else {
+                handleItemClick(node)
+              }
+            }}
             style={{
               padding: '4px 8px',
+              paddingLeft: `${8 + depth * 16}px`,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
+              gap: '6px',
+              backgroundColor: isSelected ? '#094771' : 'transparent',
               color: '#fff',
               fontSize: '13px',
               userSelect: 'none',
+              borderLeft: isSelected ? '2px solid #007acc' : '2px solid transparent',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#264de4')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onMouseEnter={(e) => {
+              if (!isSelected) {
+                e.currentTarget.style.backgroundColor = '#2a2d2e'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isSelected) {
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }
+            }}
           >
-            {item.isDirectory && (
-              <span 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  toggleExpand(key)
-                }}
-                style={{ marginRight: '4px', cursor: 'pointer' }}
-              >
-                {isExpanded ? '📂' : '📁'}
+            {/* Expand/Collapse arrow for directories */}
+            {node.isDirectory && (
+              <span style={{ 
+                width: '16px', 
+                textAlign: 'center',
+                transition: 'transform 0.2s',
+                transform: node.isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              }}>
+                {node.isLoading ? '⏳' : '▶'}
               </span>
             )}
-            {!item.isDirectory && (
-              <span style={{ marginRight: '4px' }}>📄</span>
-            )}
-            <span>{item.name}</span>
+            {!node.isDirectory && <span style={{ width: '16px' }} />}
+            
+            {/* Icon */}
+            <span>{getFileIcon(node.name, node.isDirectory)}</span>
+            
+            {/* Name */}
+            <span style={{ 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap',
+              flex: 1,
+            }}>
+              {node.name}
+            </span>
           </div>
           
-          {/* Render subdirectory contents */}
-          {item.isDirectory && isExpanded && (
-            <div style={{ marginLeft: '16px' }}>
-              {renderSubDirectory(currentPath, item.name, expandedDirs)}
+          {/* Render children if expanded */}
+          {node.isDirectory && node.isExpanded && node.children && (
+            <div>
+              {renderTreeNode(node.children, currentPath, depth + 1)}
             </div>
           )}
         </div>
@@ -113,43 +189,67 @@ export default function FileExplorer({ rootPath = '' }: FileExplorerProps) {
     })
   }
 
-  const renderSubDirectory = (parentPath: string, dirName: string, dirs: Set<string>) => {
-    const subdirPath = parentPath ? `${parentPath}/${dirName}` : dirName
-    // For now, just show a placeholder - full implementation would recursively load
-    return (
-      <div style={{ color: '#888', fontSize: '12px', padding: '4px 8px' }}>
-        Loading... (Week 2: Full recursive loading)
-      </div>
-    )
-  }
-
   return (
-    <div style={{ height: '100%', backgroundColor: '#252526', overflowY: 'auto' }}>
-      <div style={{ padding: '8px 12px', borderBottom: '1px solid #3c3c3c', backgroundColor: '#252526' }}>
-        <strong style={{ color: '#fff', fontSize: '12px' }}>EXPLORER</strong>
+    <div style={{ height: '100%', backgroundColor: '#252526', display: 'flex', flexDirection: 'column' }}>
+      {/* Header with Open Folder button */}
+      <div style={{ 
+        padding: '8px 12px', 
+        borderBottom: '1px solid #3c3c3c', 
+        backgroundColor: '#252526',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+      }}>
+        <strong style={{ color: '#fff', fontSize: '12px', flex: 1 }}>EXPLORER</strong>
+        <button
+          onClick={handleOpenFolder}
+          style={{
+            padding: '4px 8px',
+            backgroundColor: '#0e639c',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontSize: '11px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1177bb')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0e639c')}
+        >
+          <FolderOpenOutlined />
+          Open Folder
+        </button>
       </div>
-      <div style={{ padding: '8px 0' }}>
-        {cwd && (
-          <div
-            onClick={() => {
-              setCurrentPath(cwd)
-              listDirectory(cwd)
-            }}
-            style={{
-              padding: '4px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              color: '#fff',
-              fontSize: '13px',
-              backgroundColor: '#37373d',
-            }}
-          >
-            <span style={{ marginRight: '4px' }}>📁</span>
-            <span>{cwd}</span>
+      
+      {/* Tree view */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+        {!rootPath ? (
+          <div style={{ padding: '16px', textAlign: 'center', color: '#888', fontSize: '12px' }}>
+            <p>No folder opened</p>
+            <p style={{ marginTop: '8px' }}>Click "Open Folder" to start</p>
           </div>
+        ) : (
+          <>
+            {/* Root path display */}
+            <div style={{
+              padding: '4px 8px',
+              color: '#fff',
+              fontSize: '12px',
+              backgroundColor: '#37373d',
+              fontWeight: 600,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {rootPath.split('/').pop() || rootPath}
+            </div>
+            
+            {/* Tree nodes */}
+            {renderTreeNode(treeData, [])}
+          </>
         )}
-        <div style={{ marginTop: '8px' }}>{renderTree()}</div>
       </div>
     </div>
   )

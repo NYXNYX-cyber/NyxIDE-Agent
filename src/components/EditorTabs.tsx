@@ -1,133 +1,105 @@
-import { useState, useEffect } from 'react'
+import { useAppState } from '../context/AppContext'
 import { CloseOutlined } from '@ant-design/icons'
 
-// Mock open files for Week 1 demo
-const MOCK_FILES = [
-  { path: '/home/nyx/Documents/nyxide/README.md', name: 'README.md', modified: false },
-  { path: '/home/nyx/Documents/nyxide/package.json', name: 'package.json', modified: false },
-]
-
 export default function EditorTabs() {
-  const [tabs, setTabs] = useState(MOCK_FILES)
-  const [activeTab, setActiveTab] = useState(MOCK_FILES[0]?.path || '')
+  const { tabs, activeTabPath, setActiveTab, closeFile } = useAppState()
 
-  // Listen for file tab changes from Electron main process
-  useEffect(() => {
-    if ((window as any).nyxide?.getOpenFiles) {
-      ;(window as any).nyxide.getOpenFiles().then(({ tabs }: { tabs: string[] }) => {
-        // Convert paths to tab objects
-        setTabs(tabs.map(path => ({ 
-          path, 
-          name: path.split('/').pop() || 'Untitled',
-          modified: false 
-        })))
-      })
-    }
-  }, [])
-
-  const handleCloseTab = (e: React.MouseEvent, path: string) => {
+  const handleCloseTab = async (e: React.MouseEvent, path: string) => {
     e.stopPropagation()
-    
-    if ((window as any).nyxide?.closeFile) {
-      ;(window as any).nyxide.closeFile(path).then(({ tabs }: { tabs: string[] }) => {
-        setTabs(tabs.map(p => ({ 
-          path: p, 
-          name: p.split('/').pop() || 'Untitled',
-          modified: false 
-        })))
-        
-        if (activeTab === path && tabs.length > 0) {
-          setActiveTab(tabs[tabs.length - 1])
-        } else if (tabs.length === 0) {
-          setActiveTab('')
-        }
-      })
-    }
+    await closeFile(path)
   }
 
   return (
     <div style={{
-      height: '32px',
+      height: '36px',
       backgroundColor: '#252526',
       display: 'flex',
       alignItems: 'flex-end',
       overflowX: 'auto',
+      overflowY: 'hidden',
       borderBottom: '1px solid #3c3c3c',
     }}>
-      {/* New Tab Button */}
-      <button
-        style={{
-          padding: '8px 12px',
-          backgroundColor: 'transparent',
-          border: 'none',
-          color: '#fff',
-          fontSize: '12px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}
-        onClick={() => alert('Create new file feature coming in Week 2!')}
-      >
-        <span>➕</span> New File
-      </button>
-
       {/* Tabs */}
-      {tabs.map((tab, index) => (
-        <div
-          key={index}
-          onClick={() => setActiveTab(tab.path)}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: activeTab === tab.path ? '#1e1e1e' : 'transparent',
-            borderRight: '1px solid #3c3c3c',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '12px',
-            minWidth: '120px',
-            maxWidth: '200px',
-            userSelect: 'none',
-          }}
-          onMouseEnter={(e) => {
-            if (activeTab !== tab.path) {
-              e.currentTarget.style.backgroundColor = '#2a2d2e'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== tab.path) {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }
-          }}
-        >
-          <span>{tab.modified ? '● ' : ''}</span>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {tab.name}
-          </span>
-          <button
-            onClick={(e) => handleCloseTab(e, tab.path)}
+      {tabs.map((tab) => {
+        const isActive = activeTabPath === tab.path
+        return (
+          <div
+            key={tab.path}
+            onClick={() => setActiveTab(tab.path)}
             style={{
-              background: 'none',
-              border: 'none',
-              color: '#888',
+              padding: '8px 12px',
+              backgroundColor: isActive ? '#1e1e1e' : '#2d2d2d',
+              borderRight: '1px solid #3c3c3c',
               cursor: 'pointer',
-              padding: '0',
               display: 'flex',
               alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              minWidth: '120px',
+              maxWidth: '200px',
+              userSelect: 'none',
+              borderBottom: isActive ? '2px solid #007acc' : '2px solid transparent',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = '#2a2d2e'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = '#2d2d2d'
+              }
+            }}
           >
-            <CloseOutlined />
-          </button>
-        </div>
-      ))}
+            <span style={{ color: tab.modified ? '#fff' : '#888' }}>
+              {tab.modified ? '●' : '○'}
+            </span>
+            <span style={{ 
+              flex: 1, 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap',
+              color: isActive ? '#fff' : '#888',
+            }}>
+              {tab.name}
+            </span>
+            <button
+              onClick={(e) => handleCloseTab(e, tab.path)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#888',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '3px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#fff'
+                e.currentTarget.style.backgroundColor = '#3c3c3c'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#888'
+                e.currentTarget.style.backgroundColor = 'transparent'
+              }}
+            >
+              <CloseOutlined style={{ fontSize: '10px' }} />
+            </button>
+          </div>
+        )
+      })}
       
-      {/* Monaco Editor Placeholder (Week 1-2 integration) */}
+      {/* Empty state */}
       {tabs.length === 0 && (
-        <div style={{ padding: '8px 12px', color: '#666', fontSize: '12px' }}>
-          No files open • Use File Explorer on the right or create a new file
+        <div style={{ 
+          padding: '8px 12px', 
+          color: '#666', 
+          fontSize: '12px',
+          display: 'flex',
+          alignItems: 'center',
+        }}>
+          No files open • Click a file in the Explorer to open it
         </div>
       )}
     </div>
