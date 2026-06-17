@@ -52,13 +52,18 @@ export default function FileExplorer({ onFileClick }: FileExplorerProps) {
   }
 
   const handleOpenFolder = async () => {
+    console.log('[FileExplorer] Open Folder button clicked')
     try {
+      console.log('[FileExplorer] Calling openFolderDialog IPC...')
       const result = await (window as any).nyxide.openFolderDialog()
+      console.log('[FileExplorer] Dialog result:', result)
+      
       if (result.success && result.path) {
+        console.log('[FileExplorer] Setting root path to:', result.path)
         setRootPath(result.path)
       }
     } catch (error) {
-      console.error('Error opening folder:', error)
+      console.error('[FileExplorer] Error opening folder:', error)
     }
   }
 

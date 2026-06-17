@@ -6,13 +6,15 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
-
 // Track open files for multi-tab support
 let openFiles = []
 
+let mainWindow = null
+
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
@@ -150,10 +152,13 @@ function createWindow() {
   // Open folder dialog
   ipcMain.handle('dialog:open-folder', async () => {
     try {
+      console.log('[IPC] Opening folder dialog...')
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory'],
         title: 'Open Folder',
       })
+      
+      console.log('[IPC] Dialog result:', result)
       
       if (result.canceled) {
         return { success: false, canceled: true }
@@ -161,6 +166,7 @@ function createWindow() {
       
       return { success: true, path: result.filePaths[0] }
     } catch (error) {
+      console.error('[IPC] Dialog error:', error)
       return { success: false, error: error.message }
     }
   })
