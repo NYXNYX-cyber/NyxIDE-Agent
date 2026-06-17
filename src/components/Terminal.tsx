@@ -179,9 +179,9 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
       })
       
       if (result.success) {
-        // Write stdout directly without adding extra newlines
+        // Write stdout directly - preserve original formatting from command
         if (result.stdout) {
-          // Remove trailing newline and write as-is
+          // Remove trailing newline only (to avoid double spacing)
           const output = result.stdout.replace(/\n$/, '')
           term.writeln(output)
         }

@@ -129,10 +129,24 @@ function createWindow() {
         COLUMNS: String(options.columns || 80),
         LINES: String(options.rows || 24),
         TERM: 'xterm-256color',
+        FORCE_COLOR: '1',  // Force color output
+      }
+      
+      // Auto-enhance common commands for better terminal output
+      let enhancedCommand = command
+      
+      // For 'ls' without flags that control output format, add -C for column output
+      if (/^ls(\s|$)/.test(command.trim()) && !/-(C|x|1|R|l)/.test(command)) {
+        enhancedCommand = command.replace(/^ls/, 'ls -C')
+      }
+      
+      // For 'ls -la' or 'ls -l', add --color=always for colored output
+      if (/^ls\s+-[a-zA-Z]*l/.test(command.trim()) && !/--color/.test(command)) {
+        enhancedCommand = command + ' --color=always'
       }
       
       return new Promise((resolve) => {
-        exec(command, { cwd, env, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+        exec(enhancedCommand, { cwd, env, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
           if (error) {
             resolve({ success: false, error: error.message, stderr, stdout })
           } else {
