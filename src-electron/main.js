@@ -14,15 +14,20 @@ let mainWindow = null
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 function createWindow() {
+  const preloadPath = path.join(__dirname, 'preload.js')
+  console.log('[Main] Preload script path:', preloadPath)
+  console.log('[Main] __dirname:', __dirname)
+  
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false,
     },
     titleBarStyle: 'hidden',
     frame: true,
@@ -153,6 +158,14 @@ function createWindow() {
   ipcMain.handle('dialog:open-folder', async () => {
     try {
       console.log('[IPC] Opening folder dialog...')
+      console.log('[IPC] mainWindow exists:', !!mainWindow)
+      
+      // Ensure mainWindow is available
+      if (!mainWindow) {
+        console.error('[IPC] mainWindow is null!')
+        return { success: false, error: 'Window not ready' }
+      }
+      
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory'],
         title: 'Open Folder',
