@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.js text diff=javascript
+*.ts text diff=typescript
+*.tsx text diff=typescript
+*.json text diff=json
+*.md text
+*.html text
+*.css text
+*.scss text
+*.yml text
+*.yaml text
+*.sh text eol=lf

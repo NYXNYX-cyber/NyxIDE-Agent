@@ -1,0 +1,33 @@
+{
+  "name": "nyxide",
+  "version": "0.1.0",
+  "description": "AI-Powered Desktop IDE with Monaco Editor and Custom AI Agent Integration",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && electron-builder",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "keywords": [
+    "ide",
+    "electron",
+    "react",
+    "monaco-editor",
+    "ai-agent",
+    "developer-tools"
+  ],
+  "author": "NYXNYX-cyber",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NYXNYX-cyber/NyxIDE-Agent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NYXNYX-cyber/NyxIDE-Agent/issues"
+  },
+  "homepage": "https://github.com/NYXNYX-cyber/NyxIDE-Agent#readme"
+}
