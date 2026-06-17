@@ -4,6 +4,7 @@ import FileExplorer from './components/FileExplorer'
 import EditorTabs from './components/EditorTabs'
 import CodeEditor from './components/CodeEditor'
 import MenuBar from './components/MenuBar'
+import Terminal from './components/Terminal'
 
 // Internal App component that uses context
 function InternalApp() {
@@ -393,6 +394,72 @@ function InternalApp() {
           >
             📁
           </button>
+        )}
+      </div>
+      
+        {/* Terminal Panel */}
+      <div 
+        style={{ 
+          height: terminalOpen ? '250px' : '0px',
+          minHeight: terminalOpen ? '150px' : '0px',
+          maxHeight: terminalOpen ? '400px' : '0px',
+          transition: 'all 0.3s ease',
+          borderTop: terminalOpen ? '1px solid #3c3c3c' : 'none',
+          backgroundColor: '#1e1e1e',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {!terminalOpen && (
+          <button
+            onClick={() => setTerminalOpen(true)}
+            style={{
+              width: '100%',
+              height: '30px',
+              background: '#2a2d2e',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              opacity: 0.7,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+            title="Toggle Terminal"
+          >
+            ⌨️ Terminal
+          </button>
+        )}
+        
+        {terminalOpen && (
+          <>
+            <button
+              onClick={() => setTerminalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                background: '#e0e0e0',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                zIndex: 10,
+                color: '#333',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
+            >
+              ×
+            </button>
+            
+            <Terminal visible={terminalOpen} />
+          </>
         )}
       </div>
       
