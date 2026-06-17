@@ -26,16 +26,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeTabPath, setActiveTabPath] = useState<string | null>(null)
 
   const openFile = useCallback(async (path: string) => {
+    console.log('[AppContext] Opening file:', path)
+    
     // Check if file already open
     const existingTab = tabs.find(tab => tab.path === path)
     if (existingTab) {
+      console.log('[AppContext] File already open, switching to tab')
       setActiveTabPath(path)
       return
     }
 
     // Load file content
     try {
+      console.log('[AppContext] Loading file content via IPC...')
       const result = await (window as any).nyxide.readFile(path)
+      console.log('[AppContext] IPC result:', result)
+      
       if (result.success) {
         const newTab: Tab = {
           path,
@@ -44,14 +50,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           content: result.content,
           originalContent: result.content,
         }
+        console.log('[AppContext] Adding new tab:', newTab.name)
         setTabs(prev => [...prev, newTab])
         setActiveTabPath(path)
       } else {
-        console.error('Failed to open file:', result.error)
+        console.error('[AppContext] Failed to open file:', result.error)
         alert(`Failed to open file: ${result.error}`)
       }
     } catch (error) {
-      console.error('Error opening file:', error)
+      console.error('[AppContext] Error opening file:', error)
       alert(`Error opening file: ${error}`)
     }
   }, [tabs])

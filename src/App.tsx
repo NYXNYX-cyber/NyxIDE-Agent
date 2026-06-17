@@ -6,7 +6,7 @@ import CodeEditor from './components/CodeEditor'
 
 // Internal App component that uses context
 function InternalApp() {
-  const { tabs, activeTabPath, updateFileContent, saveFile } = useAppState()
+  const { tabs, activeTabPath, openFile, updateFileContent, saveFile } = useAppState()
   const [chatOpen, setChatOpen] = useState(true)
 
   // Get active tab content
@@ -14,11 +14,10 @@ function InternalApp() {
   const activeContent = activeTab?.content || ''
   const activeLanguage = activeTab?.path.split('.').pop()?.toLowerCase()
 
-  const handleFileClick = useCallback((path: string) => {
-    if ((window as any).nyxide && (window as any).nyxide.openFile) {
-      ;(window as any).nyxide.openFile(path)
-    }
-  }, [])
+  const handleFileClick = useCallback(async (path: string) => {
+    console.log('[App] File clicked:', path)
+    await openFile(path)
+  }, [openFile])
 
   const handleSave = useCallback(async () => {
     if (!activeTabPath) return

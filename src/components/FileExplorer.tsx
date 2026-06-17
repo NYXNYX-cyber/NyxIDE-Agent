@@ -98,8 +98,11 @@ export default function FileExplorer({ onFileClick }: FileExplorerProps) {
   }
 
   const handleItemClick = (item: TreeNode) => {
+    console.log('[FileExplorer] Item clicked:', item.name, 'isFile:', item.isFile, 'path:', item.path)
     setSelectedPath(item.path)
+    
     if (item.isFile && onFileClick) {
+      console.log('[FileExplorer] Calling onFileClick callback with path:', item.path)
       onFileClick(item.path)
     }
   }
