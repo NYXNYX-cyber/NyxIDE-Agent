@@ -73,15 +73,40 @@ export default function CodeEditor({
       editor.getAction('editor.action.formatDocument')?.run()
     })
     
-    // === SIMPLE SNIPPET SYSTEM - NO TRIGGER CHARACTER COMPLEXITY ===
+    // === SNIPPET SYSTEM WITH TRIGGER CHARACTER SUPPORT ===
     setTimeout(() => {
       const currentLang = detectedLanguage || 'plaintext'
       const snippets = getSnippetsForLanguage(currentLang)
       
       if (snippets.length > 0) {
         monaco.languages.registerCompletionItemProvider(currentLang, {
+          triggerCharacters: ['<', '!', '.', '#', '@', '/', '$'],
           provideCompletionItems: (model: any, position: any) => {
-            const word = model.getWordUntilPosition(position)
+            const lineContent = model.getLineContent(position.lineNumber)
+            const textUntilPosition = model.getValueInRange({
+              startLineNumber: position.lineNumber,
+              startColumn: 1,
+              endLineNumber: position.lineNumber,
+              endColumn: position.column,
+            })
+            
+            // Detect trigger character
+            const charBeforeCursor = lineContent[position.column - 2] || ''
+            const triggerChars = ['<', '!', '.', '#', '@', '/', '$']
+            const isTriggerChar = triggerChars.includes(charBeforeCursor)
+            
+            // Calculate range
+            let startColumn, endColumn
+            if (isTriggerChar) {
+              // Include trigger character in range
+              startColumn = Math.max(1, position.column - 1)
+              endColumn = position.column
+            } else {
+              // Use word boundary
+              const word = model.getWordUntilPosition(position)
+              startColumn = word.startColumn
+              endColumn = word.endColumn
+            }
             
             const suggestions = snippets.map((snippet) => ({
               label: snippet.label,
@@ -92,13 +117,12 @@ export default function CodeEditor({
               range: {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn,
+                startColumn,
+                endColumn,
               },
               sortText: '0' + snippet.label,
               detail: snippet.label,
-              // Use the snippet's own prefix as the filter text
-              filterText: snippet.prefix ? snippet.prefix : snippet.label,
+              filterText: snippet.label,
             }))
             
             return { suggestions }
