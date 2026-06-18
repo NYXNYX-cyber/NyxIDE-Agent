@@ -27,8 +27,8 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 | Core Editor Features | ✅ Complete | Phase 1 DONE |
 | Menu Bar (File, Edit, View, Help) | ✅ Complete | Phase 1 DONE |
 | Collapsible Panels (Chat/Explorer) | ✅ Complete | Phase 1 DONE |
-| AI API Integration | ⏳ Pending | Week 2 |
-| Chat Interface & Streaming | ⏳ Pending | Week 2 |
+| **AI API Integration** | **✅ Complete** | **Phase 1 DONE** |
+| **Chat Interface & Streaming** | **✅ Complete** | **Phase 1 DONE** |
 | Multi-tab Editing | ✅ Complete | Phase 1 DONE |
 | Terminal Integration (PTY) | ✅ Complete | Week 3 DONE |
 | Diff Viewer & Approval Workflow | ⏳ Pending | Week 3 |
@@ -46,7 +46,8 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 - **Code Editor:** Monaco Editor (via @monaco-editor/react)
 - **Terminal:** xterm.js + node-pty (pseudo-terminal emulation)
 - **UI Components:** Ant Design
-- **State Management:** Zustand (planned)
+- **State Management:** Zustand with persist middleware
+- **AI Integration:** Vercel AI SDK (@ai-sdk/react) for streaming
 - **Packaging:** electron-builder 26.15.3
 
 ## 🏗️ Phase 1 Implementation - COMPLETE! ✅
@@ -90,7 +91,14 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 **Chat Panel:**
 - ✅ Collapsible design (20% width, fully hides to 0px)
 - ✅ Toggle button (Escape key)
-- ✅ Placeholder for AI integration (Week 2)
+- ✅ **Real-time streaming AI responses**
+- ✅ **Message persistence (localStorage)**
+- ✅ **Typing indicator during AI thinking**
+- ✅ **Copy button for AI responses**
+- ✅ **Timestamp on each message**
+- ✅ **Avatar differentiation (user vs assistant)**
+- ✅ **Error display and recovery**
+- ✅ **Keyboard shortcuts (Enter/Shift+Enter)**
 
 **Keyboard Shortcuts:**
 - ✅ Ctrl+S → Save file
@@ -263,6 +271,113 @@ window.nyxide.onPtyData(({ id, data }) => {
 
 ---
 
+## 🤖 AI Chat Integration - COMPLETE! ✅
+
+**Full streaming AI chat with real-time responses and persistent history!**
+
+### ✅ What Works:
+
+**Chat Interface:**
+- ✅ **Real-time streaming** - Response appears word-by-word as AI generates
+- ✅ **Persistent history** - Messages saved to localStorage, survive app restarts
+- ✅ **Smart context window** - Last 20 messages included for AI context
+- ✅ **Message bubbles** - Distinct styling for user vs assistant messages
+- ✅ **Avatar icons** - User (👤) vs Assistant (🤖) visual differentiation
+- ✅ **Timestamp display** - Shows when each message was sent
+- ✅ **Copy button** - One-click copy AI responses to clipboard
+- ✅ **Streaming cursor** - Blinking cursor shows where response is being generated
+- ✅ **Thinking indicator** - Spinner appears while AI is processing
+- ✅ **Error handling** - Graceful error display with retry capability
+- ✅ **Clear chat** - Remove all messages with confirmation
+
+**Keyboard Shortcuts:**
+- ✅ **Enter** → Send message
+- ✅ **Shift+Enter** → Insert newline in message
+- ✅ **Auto-resize** → Textarea grows as you type (up to 120px max)
+
+**State Management:**
+- ✅ **Zustand store** - Lightweight state management (4KB gzipped)
+- ✅ **Persist middleware** - Automatic localStorage persistence
+- ✅ **Streaming updates** - Real-time message updates during stream
+- ✅ **Loading states** - Proper UI feedback during API calls
+
+**Architecture:**
+```
+src/
+├── config/
+│   └── aiConfig.ts          # AI endpoint, model, retry settings
+├── services/
+│   └── aiService.ts         # streamChatCompletion() API client
+├── stores/
+│   └── aiStore.ts           # Zustand store with persistence
+└── components/
+    ├── ChatPanel.tsx         # Main chat interface
+    ├── ChatMessage.tsx       # Message bubble component
+    └── ChatInput.tsx         # Auto-resize input textarea
+```
+
+### 🎯 Workflow Test:
+
+1. ✅ **Basic Chat Test:**
+   - Type message in input box
+   - Press Enter to send
+   - See "AI is thinking..." spinner
+   - Watch response stream in word-by-word
+   - Message saved automatically
+
+2. ✅ **Persistence Test:**
+   - Send several messages
+   - Close and restart app
+   - All messages still there! (localStorage)
+
+3. ✅ **Streaming Test:**
+   - Send long question
+   - Response appears character-by-character
+   - Blinking cursor shows current position
+   - Copy button disabled until streaming complete
+
+4. ✅ **Error Handling Test:**
+   - Disconnect internet
+   - Send message
+   - See error message displayed
+   - Reconnect and retry
+   - Message sends successfully
+
+5. ✅ **Clear Chat Test:**
+   - Have several messages
+   - Click "Clear" button
+   - Confirm dialog appears
+   - Click OK → All messages removed
+
+### 🔧 Technical Details:
+
+**Streaming Implementation:**
+```typescript
+// Use Vercel AI SDK for streaming
+const result = await streamText({
+  model: ai(modelName),
+  messages: [
+    { role: 'system', content: systemPrompt },
+    ...contextMessages,
+  ],
+  maxTokens: 4096,
+  temperature: 0.7,
+})
+
+// Process chunks in real-time
+for await (const chunk of result.textStream) {
+  updateStreamingMessage(id, chunk)
+}
+```
+
+**Features:**
+- Exponential backoff retry on errors (1s, 2s, 4s)
+- Automatic context window management (last 20 messages)
+- TypeScript full type safety
+- Clean separation of concerns (config/service/store/components)
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -302,8 +417,11 @@ npm run build
 8. **Press Ctrl+`** → Terminal opens at bottom!
 9. **Type `ls`** → Perfect output with colors!
 10. **Type `npm run dev`** → Run your Node.js app!
+11. **Click Chat panel** → Type message and press Enter
+12. **Watch streaming** → AI response appears word-by-word!
+13. **Close & reopen app** → Messages still there! (localStorage)
 
-**That's it! Full editor + terminal workflow working!** 🎉
+**That's it! Full editor + terminal + AI chat workflow working!** 🎉
 
 ### Development Commands
 
@@ -359,9 +477,11 @@ nyxide/
 
 NyxIDE uses an external AI API service. Configure via Settings UI (Week 4):
 
-**Default Endpoint:** `http://localhost:1430/v1`  
-**Model:** `kiro/claude-sonnet-4.5-thinking-agentic`  
+**Default Endpoint:** `http://157.245.196.165:20128/v1`  
+**Model:** `gc/gemini-3.1-pro-preview`  
 **Auth:** Bearer token in Authorization header
+
+**Configuration File:** `src/config/aiConfig.ts`
 
 ## 🎨 Design Philosophy
 
@@ -398,4 +518,4 @@ By using this software, you agree to the terms and conditions of the Apache Lice
 
 **Made with ❤️ for developers who want AI-assisted coding done right**
 
-*Status: Phase 1 Complete • Menu Bar Added • Terminal with PTY Implemented • Ready for Week 2 AI Integration*
+*Status: Phase 1 Complete • Menu Bar Added • Terminal with PTY Implemented • **AI Chat with Streaming Ready** • Next: File Operations*
