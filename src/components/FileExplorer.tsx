@@ -23,19 +23,32 @@ export default function FileExplorer({ onFileClick, onFolderChange }: FileExplor
   const [rootPath, setRootPath] = useState<string>('')
   const [treeData, setTreeData] = useState<TreeNode[]>([])
   const [selectedPath, setSelectedPath] = useState<string>('')
+  const [refreshKey, setRefreshKey] = useState<number>(0)
 
-  // Load root directory when rootPath changes
+  // Load root directory when rootPath changes or refreshKey changes
   useEffect(() => {
     if (rootPath) {
       loadDirectory(rootPath).then(items => {
         setTreeData(items)
       })
-      // Notify parent about folder change
-      if (onFolderChange) {
+      // Notify parent about folder change (only when rootPath changes, not on refresh)
+      if (onFolderChange && refreshKey === 0) {
         onFolderChange(rootPath)
       }
     }
-  }, [rootPath])
+  }, [rootPath, refreshKey])
+
+  const refresh = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+
+  // Expose refresh function via window object for parent to call
+  useEffect(() => {
+    (window as any).fileExplorerRefresh = refresh
+    return () => {
+      delete (window as any).fileExplorerRefresh
+    }
+  }, [])
 
   const loadDirectory = async (dirPath: string): Promise<TreeNode[]> => {
     try {

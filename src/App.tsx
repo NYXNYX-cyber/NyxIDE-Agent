@@ -52,6 +52,10 @@ function InternalApp() {
     const result = await (window as any).nyxide.writeFile(fullPath, '')
     if (result.success) {
       await openFile(fullPath)
+      // Refresh file explorer to show new file
+      if ((window as any).fileExplorerRefresh) {
+        (window as any).fileExplorerRefresh()
+      }
     } else {
       throw new Error(result.error || 'Failed to create file')
     }

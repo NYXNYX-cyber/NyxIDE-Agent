@@ -174,32 +174,41 @@ export default function CodeEditor({
     })
     
     // Register snippets for the current language
-    const snippets = getSnippetsForLanguage(detectedLanguage)
-    if (snippets.length > 0) {
-      monaco.languages.registerCompletionItemProvider(detectedLanguage, {
-        provideCompletionItems: (model: any, position: any) => {
-          const word = model.getWordUntilPosition(position)
-          const range = {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn,
-          }
-          
-          const suggestions = snippets.map((snippet) => ({
-            label: snippet.label,
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: snippet.insertText,
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: snippet.documentation,
-            range: range,
-            sortText: snippet.sortText || snippet.label,
-          }))
-          
-          return { suggestions }
-        },
-      })
-    }
+    // Wait a bit for language detection to complete
+    setTimeout(() => {
+      const currentLang = detectedLanguage || 'plaintext'
+      const snippets = getSnippetsForLanguage(currentLang)
+      
+      if (snippets.length > 0) {
+        monaco.languages.registerCompletionItemProvider(currentLang, {
+          triggerCharacters: ['!', '<', '/', '.'],
+          provideCompletionItems: (model: any, position: any) => {
+            const word = model.getWordUntilPosition(position)
+            const range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endColumn: word.endColumn,
+            }
+            
+            const suggestions = snippets.map((snippet) => ({
+              label: snippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: snippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: snippet.documentation,
+              range: range,
+              sortText: snippet.sortText || '0' + snippet.label,
+              detail: 'Snippet',
+            }))
+            
+            return { suggestions }
+          },
+        })
+        
+        console.log(`[CodeEditor] Registered ${snippets.length} snippets for ${currentLang}`)
+      }
+    }, 100)
     
     // Configure editor options
     editor.updateOptions({
