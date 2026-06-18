@@ -177,18 +177,33 @@ export default function CodeEditor({
     // Wait a bit for language detection to complete
     setTimeout(() => {
       const currentLang = detectedLanguage || 'plaintext'
+      console.log('[CodeEditor] Detected language:', currentLang, 'File:', filePath)
+      
       const snippets = getSnippetsForLanguage(currentLang)
       
       if (snippets.length > 0) {
         monaco.languages.registerCompletionItemProvider(currentLang, {
-          triggerCharacters: ['!', '<', '/', '.'],
+          triggerCharacters: ['!', '<', '/', '.', '$', '@', '#'],
           provideCompletionItems: (model: any, position: any) => {
-            const word = model.getWordUntilPosition(position)
+            const lineContent = model.getLineContent(position.lineNumber)
+            
+            // Detect character at cursor position
+            const charAtCursorIndex = lineContent.indexOf(lineContent.substr(0, position.column).slice(-1), Math.max(0, position.column - 2))
+            const textBeforeCursor = lineContent.substring(0, Math.max(0, position.column - 1))
+            const charBeforeCursor = textBeforeCursor.slice(-1)
+            
+            const isTriggerChar = ['!', '<', '/', '.', '$', '@', '#'].includes(charBeforeCursor)
+            
+            console.log(`[Snippet] Char before cursor: "${charBeforeCursor}", isTrigger: ${isTriggerChar}`)
+            
+            // Calculate range: include trigger character if present
+            const startColumn = isTriggerChar ? Math.max(1, position.column - 1) : position.column
+            
             const range = {
               startLineNumber: position.lineNumber,
               endLineNumber: position.lineNumber,
-              startColumn: word.startColumn,
-              endColumn: word.endColumn,
+              startColumn: startColumn,
+              endColumn: position.column,
             }
             
             const suggestions = snippets.map((snippet) => ({
@@ -201,6 +216,16 @@ export default function CodeEditor({
               sortText: snippet.sortText || '0' + snippet.label,
               detail: 'Snippet',
               filterText: snippet.label,
+              // Remove trigger character if it exists - GLOBAL FIX!
+              additionalTextEdits: isTriggerChar ? [{
+                range: {
+                  startLineNumber: position.lineNumber,
+                  startColumn: startColumn,
+                  endLineNumber: position.lineNumber,
+                  endColumn: position.column,
+                },
+                text: '',
+              }] : undefined,
             }))
             
             return { suggestions }
@@ -208,6 +233,8 @@ export default function CodeEditor({
         })
         
         console.log(`[CodeEditor] Registered ${snippets.length} snippets for ${currentLang}`)
+      } else {
+        console.log(`[CodeEditor] No snippets registered for ${currentLang}`)
       }
     }, 100)
     
