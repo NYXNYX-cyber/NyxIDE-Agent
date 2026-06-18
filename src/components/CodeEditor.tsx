@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
+import { getSnippetsForLanguage } from '../utils/snippets'
 
 interface CodeEditorProps {
   filePath: string
@@ -172,15 +173,33 @@ export default function CodeEditor({
       editor.getAction('editor.action.formatDocument')?.run()
     })
     
-    // Enable autocomplete/IntelliSense
-    monaco.languages.registerCompletionItemProvider(detectedLanguage, {
-      provideCompletionItems: () => {
-        return {
-          suggestions: [],
-          incomplete: true, // This triggers Monaco's built-in completions
-        }
-      },
-    })
+    // Register snippets for the current language
+    const snippets = getSnippetsForLanguage(detectedLanguage)
+    if (snippets.length > 0) {
+      monaco.languages.registerCompletionItemProvider(detectedLanguage, {
+        provideCompletionItems: (model: any, position: any) => {
+          const word = model.getWordUntilPosition(position)
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+          }
+          
+          const suggestions = snippets.map((snippet) => ({
+            label: snippet.label,
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: snippet.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: snippet.documentation,
+            range: range,
+            sortText: snippet.sortText || snippet.label,
+          }))
+          
+          return { suggestions }
+        },
+      })
+    }
     
     // Configure editor options
     editor.updateOptions({
