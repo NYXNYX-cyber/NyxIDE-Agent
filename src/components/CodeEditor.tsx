@@ -184,19 +184,10 @@ export default function CodeEditor({
           triggerCharacters: ['!', '<', '/', '.'],
           provideCompletionItems: (model: any, position: any) => {
             const word = model.getWordUntilPosition(position)
-            
-            // Check if there's a trigger character before the word
-            const lineContent = model.getLineContent(position.lineNumber)
-            const charBeforeWord = word.startColumn > 1 ? lineContent[word.startColumn - 2] : ''
-            
-            // Adjust range to include trigger character if present
-            const shouldIncludeTrigger = ['!', '<', '/', '.'].includes(charBeforeWord)
-            const startColumn = shouldIncludeTrigger ? word.startColumn - 1 : word.startColumn
-            
             const range = {
               startLineNumber: position.lineNumber,
               endLineNumber: position.lineNumber,
-              startColumn: startColumn,
+              startColumn: word.startColumn,
               endColumn: word.endColumn,
             }
             
@@ -209,6 +200,7 @@ export default function CodeEditor({
               range: range,
               sortText: snippet.sortText || '0' + snippet.label,
               detail: 'Snippet',
+              filterText: snippet.label,
             }))
             
             return { suggestions }
