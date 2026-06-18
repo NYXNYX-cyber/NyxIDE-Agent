@@ -75,6 +75,7 @@ export default function CodeEditor({
     
     // Register HTML snippets - UNCONDITIONAL (fix race condition)
     monaco.languages.registerCompletionItemProvider('html', {
+      triggerCharacters: ['<', '!', '/', '.', 'h', 'd', 'p', 'u', 'o', 'l', 'a', 'i', 'b', 'f', 't', 's'],
       provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordAtPosition(position)
         const range = {
@@ -245,10 +246,10 @@ export default function CodeEditor({
       insertSpaces: true,
       formatOnPaste: true,
       quickSuggestions: { other: true, comments: false, strings: false },
+      suggestOnTriggerCharacters: true,
       acceptSuggestionOnCommitCharacter: true,
       acceptSuggestionOnEnter: 'on',
       snippetSuggestions: 'top',
-      suggestOnTriggerCharacters: true,
       suggest: {
         showKeywords: true, showSnippets: true, showWords: true,
         showFunctions: true, showVariables: true,
