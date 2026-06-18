@@ -19,7 +19,6 @@ export default function CodeEditor({
 }: CodeEditorProps) {
   const [editorContent, setEditorContent] = useState(content)
   const [detectedLanguage, setDetectedLanguage] = useState(language || 'plaintext')
-  const editorRef = useRef<any>(null)
 
   // Auto-detect language from file extension
   useEffect(() => {
@@ -66,8 +65,6 @@ export default function CodeEditor({
   }
 
   const handleEditorMount = (editor: any, monaco: any) => {
-    editorRef.current = editor
-    
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (onSave) { onSave() }
     })
