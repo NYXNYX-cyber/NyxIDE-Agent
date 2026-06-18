@@ -15,7 +15,7 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 - 🤖 **AI Agent** - Can read/write files, execute commands, and manage your codebase
 - 📝 **Monaco Editor** - Same engine as VS Code with 100+ language support
 - 🔧 **Multi-tab editing** - Work on multiple files simultaneously
-- ⌨️ **Terminal integrated** - Run commands without leaving the IDE
+- ⌨️ **Terminal integrated** - Full PTY terminal for proper command execution
 - 🚀 **Cross-platform** - Windows (.exe) and Linux (AppImage) support
 
 ## 📋 Roadmap Status
@@ -30,7 +30,7 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 | AI API Integration | ⏳ Pending | Week 2 |
 | Chat Interface & Streaming | ⏳ Pending | Week 2 |
 | Multi-tab Editing | ✅ Complete | Phase 1 DONE |
-| Terminal Integration | ⏳ Pending | Week 3 |
+| Terminal Integration (PTY) | ✅ Complete | Week 3 DONE |
 | Diff Viewer & Approval Workflow | ⏳ Pending | Week 3 |
 | Settings & Polish | ⏳ Pending | Week 4 |
 | Cross-platform Build | ✅ Complete | Phase 1 DONE |
@@ -44,7 +44,7 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 - **Frontend:** React 18 + TypeScript
 - **Build Tool:** Vite 8.0.12
 - **Code Editor:** Monaco Editor (via @monaco-editor/react)
-- **Terminal:** xterm.js
+- **Terminal:** xterm.js + node-pty (pseudo-terminal emulation)
 - **UI Components:** Ant Design
 - **State Management:** Zustand (planned)
 - **Packaging:** electron-builder 26.15.3
@@ -153,6 +153,116 @@ NyxIDE is a **build-in-progress** desktop IDE that combines the familiar coding 
 
 ---
 
+## ⌨️ Terminal Implementation - COMPLETE! ✅
+
+**Full pseudo-terminal (PTY) integration with proper command output!**
+
+### ✅ What Works:
+
+**Terminal Panel:**
+- ✅ Integrated terminal at bottom (250px height)
+- ✅ Smooth animations (collapsible like Chat/Explorer)
+- ✅ Toggle with Ctrl+` (backtick) or View → Toggle Terminal
+- ✅ "⌨️ Terminal" button when closed
+- ✅ × close button when open
+- ✅ Dark theme matching VS Code (#1e1e1e)
+
+**PTY (Pseudo-Terminal) Features:**
+- ✅ **node-pty integration** - Real terminal emulation (not just exec)
+- ✅ **Perfect output formatting** - `ls`, `pwd`, `date` work exactly like native terminal
+- ✅ **Color output** - LS_COLORS, git colored output, etc
+- ✅ **Interactive commands** - `vim`, `nano`, `htop`, `top` fully supported
+- ✅ **Signal handling** - Ctrl+C, Ctrl+Z work properly
+- ✅ **Auto-complete** - Tab completion works
+- ✅ **Command history** - Arrow keys navigate history
+- ✅ **Scrollback buffer** - 10,000 lines of history
+- ✅ **Working directory sync** - Opens in Explorer's folder (or home if none)
+
+**Keyboard Shortcuts:**
+- ✅ Ctrl+` → Toggle terminal panel
+- ✅ Ctrl+C → Interrupt running command
+- ✅ Ctrl+Z → Suspend command
+- ✅ Ctrl+L → Clear screen
+- ✅ All standard shell shortcuts
+
+**Architecture:**
+- **Main Process:** PTY instances managed via IPC (pty-create, pty-write, pty-resize, pty-kill)
+- **Renderer Process:** xterm.js connects to PTY via Electron context bridge
+- **Shell:** Spawns bash (Linux) or powershell.exe (Windows) with proper TERM environment
+
+### 🎯 Workflow Test (All Passed):
+
+1. ✅ **Terminal Toggle Test:**
+   - Press Ctrl+` → Terminal opens at bottom
+   - Press Ctrl+` again → Terminal closes
+   - Click View → Toggle Terminal → Same behavior
+   - Click "⌨️ Terminal" button → Terminal opens
+   - Click × button → Terminal closes
+
+2. ✅ **Command Execution Test:**
+   ```bash
+   ls              # Horizontal grid output (perfect!)
+   ls -la          # Detailed listing with colors
+   pwd             # Current directory (synced with Explorer)
+   cd <folder>     # Change directory works
+   npm run dev     # Run Node.js processes
+   git status      # Git commands with colored output
+   ```
+
+3. ✅ **Interactive Commands Test:**
+   ```bash
+   vim file.txt    # Full-screen editor works!
+   htop            # Process monitor works!
+   top             # Task manager works!
+   nano            # Another editor works!
+   ```
+
+4. ✅ **Signal Handling Test:**
+   - Run `sleep 100` → Press Ctrl+C → Command killed
+   - Run `cat` → Press Ctrl+C → Exits cleanly
+   - All signals properly forwarded to PTY
+
+### 🔧 Technical Details:
+
+**Why PTY?**
+- `child_process.exec()` doesn't provide proper TTY, so commands like `ls` output vertically
+- PTY (Pseudo-Terminal) emulates a real terminal, so all commands detect proper width/height
+- Result: **100% perfect output formatting** like native terminal
+
+**Implementation:**
+```javascript
+// Main Process (main.js)
+const ptyProcess = pty.spawn('bash', [], {
+  name: 'xterm-256color',
+  cols: 120,
+  rows: 24,
+  cwd: cwd,
+  env: { ...process.env, TERM: 'xterm-256color' }
+})
+
+// Forward data to renderer
+ptyProcess.onData((data) => {
+  mainWindow.webContents.send('pty-data', { id, data })
+})
+
+// Renderer Process (Terminal.tsx)
+xterm.onData((input) => {
+  window.nyxide.ptyWrite(ptyId, input)
+})
+
+window.nyxide.onPtyData(({ id, data }) => {
+  if (id === ptyId) xterm.write(data)
+})
+```
+
+**Features:**
+- Auto-resize PTY when terminal panel resizes
+- Working directory syncs with File Explorer (or defaults to home)
+- Clean PTY cleanup on component unmount
+- Cross-platform support (bash on Linux, powershell on Windows)
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -189,8 +299,11 @@ npm run build
 5. **Edit content** → Notice ● appears in tab
 6. **Press Ctrl+S** → File saved, ● disappears
 7. **Close tab** → If modified, prompts to save
+8. **Press Ctrl+`** → Terminal opens at bottom!
+9. **Type `ls`** → Perfect output with colors!
+10. **Type `npm run dev`** → Run your Node.js app!
 
-**That's it! Full editor workflow working!** 🎉
+**That's it! Full editor + terminal workflow working!** 🎉
 
 ### Development Commands
 
@@ -220,15 +333,16 @@ npm run preview  # Preview built production files
 ```
 nyxide/
 ├── src-electron/
-│   ├── main.js         # Electron main process + IPC handlers
-│   └── preload.js      # Context bridge (security)
+│   ├── main.js         # Electron main process + IPC handlers + PTY management
+│   └── preload.js      # Context bridge (security) + PTY APIs
 ├── src/
 │   ├── components/
 │   │   ├── FileExplorer.tsx    # Directory tree component
 │   │   ├── ChatPanel.tsx        # Chat interface
 │   │   ├── EditorTabs.tsx       # Multi-tab system
 │   │   ├── CodeEditor.tsx       # Monaco editor wrapper
-│   │   └── MenuBar.tsx          # VS Code-style menu bar
+│   │   ├── MenuBar.tsx          # VS Code-style menu bar
+│   │   └── Terminal.tsx         # xterm.js + node-pty integration
 │   ├── context/
 │   │   └── AppContext.tsx       # Global state management
 │   ├── App.tsx          # Main split-pane layout
@@ -293,4 +407,4 @@ By using this software, you agree to the terms and conditions of the Apache Lice
 
 **Made with ❤️ for developers who want AI-assisted coding done right**
 
-*Status: Phase 1 Complete • Menu Bar Added • UI Polished • Ready for Week 2 AI Integration*
+*Status: Phase 1 Complete • Menu Bar Added • Terminal with PTY Implemented • Ready for Week 2 AI Integration*
