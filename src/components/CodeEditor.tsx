@@ -19,135 +19,40 @@ export default function CodeEditor({
 }: CodeEditorProps) {
   const [editorContent, setEditorContent] = useState(content)
   const [detectedLanguage, setDetectedLanguage] = useState(language || 'plaintext')
+  const editorRef = useRef<any>(null)
 
   // Auto-detect language from file extension
   useEffect(() => {
     if (!language && filePath) {
       const ext = filePath.split('.').pop()?.toLowerCase()
       const langMap: Record<string, string> = {
-        // JavaScript/TypeScript
-        js: 'javascript',
-        jsx: 'javascript',
-        mjs: 'javascript',
-        cjs: 'javascript',
-        ts: 'typescript',
-        tsx: 'typescript',
-        mts: 'typescript',
-        cts: 'typescript',
-        
-        // Python
-        py: 'python',
-        pyw: 'python',
-        pyi: 'python',
-        
-        // PHP
-        php: 'php',
-        phtml: 'php',
-        php3: 'php',
-        php4: 'php',
-        php5: 'php',
-        php7: 'php',
-        phps: 'php',
-        
-        // Ruby
-        rb: 'ruby',
-        erb: 'ruby',
-        gemspec: 'ruby',
-        
-        // Go
+        js: 'javascript', jsx: 'javascript', mjs: 'javascript', cjs: 'javascript',
+        ts: 'typescript', tsx: 'typescript', mts: 'typescript', cts: 'typescript',
+        py: 'python', pyw: 'python', pyi: 'python',
+        php: 'php', phtml: 'php', php3: 'php', php4: 'php', php5: 'php', php7: 'php', phps: 'php',
+        rb: 'ruby', erb: 'ruby', gemspec: 'ruby',
         go: 'go',
-        
-        // Rust
         rs: 'rust',
-        
-        // Java/Kotlin
-        java: 'java',
-        kt: 'kotlin',
-        kts: 'kotlin',
-        
-        // C/C++
-        c: 'c',
-        cpp: 'cpp',
-        cc: 'cpp',
-        cxx: 'cpp',
-        h: 'c',
-        hpp: 'cpp',
-        hxx: 'cpp',
-        
-        // C#
+        java: 'java', kt: 'kotlin', kts: 'kotlin',
+        c: 'c', cpp: 'cpp', cc: 'cpp', cxx: 'cpp', h: 'c', hpp: 'cpp', hxx: 'cpp',
         cs: 'csharp',
-        
-        // Web
-        html: 'html',
-        htm: 'html',
-        xhtml: 'html',
-        css: 'css',
-        scss: 'scss',
-        sass: 'scss',
-        less: 'less',
-        
-        // Data formats
-        json: 'json',
-        jsonc: 'json',
-        xml: 'xml',
-        yaml: 'yaml',
-        yml: 'yaml',
-        toml: 'toml',
-        ini: 'ini',
-        conf: 'ini',
-        
-        // Markdown/Documentation
-        md: 'markdown',
-        markdown: 'markdown',
-        rst: 'restructuredtext',
-        tex: 'latex',
-        
-        // Shell/Scripts
-        sh: 'shell',
-        bash: 'shell',
-        zsh: 'shell',
-        fish: 'shell',
-        ps1: 'powershell',
-        psm1: 'powershell',
-        bat: 'bat',
-        cmd: 'bat',
-        
-        // SQL
-        sql: 'sql',
-        mysql: 'sql',
-        pgsql: 'sql',
-        sqlite: 'sql',
-        
-        // Other languages
-        perl: 'perl',
-        pl: 'perl',
-        lua: 'lua',
-        r: 'r',
-        swift: 'swift',
-        dart: 'dart',
-        scala: 'scala',
-        clj: 'clojure',
-        ex: 'elixir',
-        exs: 'elixir',
-        erl: 'erlang',
-        hs: 'haskell',
-        ml: 'ocaml',
-        fs: 'fsharp',
-        vb: 'vb',
-        groovy: 'groovy',
-        coffee: 'coffeescript',
-        
-        // Config files
-        dockerfile: 'dockerfile',
-        makefile: 'makefile',
-        gitignore: 'plaintext',
-        env: 'plaintext',
+        html: 'html', htm: 'html', xhtml: 'html',
+        css: 'css', scss: 'scss', sass: 'scss', less: 'less',
+        json: 'json', jsonc: 'json', xml: 'xml',
+        yaml: 'yaml', yml: 'yaml', toml: 'toml', ini: 'ini', conf: 'ini',
+        md: 'markdown', markdown: 'markdown', rst: 'restructuredtext', tex: 'latex',
+        sh: 'shell', bash: 'shell', zsh: 'shell', fish: 'shell',
+        ps1: 'powershell', psm1: 'powershell', bat: 'bat', cmd: 'bat',
+        sql: 'sql', mysql: 'sql', pgsql: 'sql', sqlite: 'sql',
+        perl: 'perl', pl: 'perl', lua: 'lua', r: 'r', swift: 'swift', dart: 'dart',
+        scala: 'scala', clj: 'clojure', ex: 'elixir', exs: 'elixir', erl: 'erlang',
+        hs: 'haskell', ml: 'ocaml', fs: 'fsharp', vb: 'vb', groovy: 'groovy', coffee: 'coffeescript',
+        dockerfile: 'dockerfile', makefile: 'makefile', gitignore: 'plaintext', env: 'plaintext',
       }
       setDetectedLanguage(langMap[ext || ''] || 'plaintext')
     }
   }, [filePath, language])
 
-  // Update content when file changes
   useEffect(() => {
     setEditorContent(content)
   }, [content, filePath])
@@ -161,50 +66,25 @@ export default function CodeEditor({
   }
 
   const handleEditorMount = (editor: any, monaco: any) => {
-    // Add Ctrl+S save shortcut
+    editorRef.current = editor
+    
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      if (onSave) {
-        onSave()
-      }
+      if (onSave) { onSave() }
     })
     
-    // Add Ctrl+Shift+I format document shortcut
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyI, () => {
       editor.getAction('editor.action.formatDocument')?.run()
     })
     
-    // Register snippets for the current language
-    // Wait a bit for language detection to complete
+    // === SIMPLE SNIPPET SYSTEM - NO TRIGGER CHARACTER COMPLEXITY ===
     setTimeout(() => {
       const currentLang = detectedLanguage || 'plaintext'
-      console.log('[CodeEditor] Detected language:', currentLang, 'File:', filePath)
-      
       const snippets = getSnippetsForLanguage(currentLang)
       
       if (snippets.length > 0) {
         monaco.languages.registerCompletionItemProvider(currentLang, {
-          triggerCharacters: ['!', '<', '/', '.', '$', '@', '#'],
           provideCompletionItems: (model: any, position: any) => {
-            const lineContent = model.getLineContent(position.lineNumber)
-            
-            // Detect character at cursor position
-            const charAtCursorIndex = lineContent.indexOf(lineContent.substr(0, position.column).slice(-1), Math.max(0, position.column - 2))
-            const textBeforeCursor = lineContent.substring(0, Math.max(0, position.column - 1))
-            const charBeforeCursor = textBeforeCursor.slice(-1)
-            
-            const isTriggerChar = ['!', '<', '/', '.', '$', '@', '#'].includes(charBeforeCursor)
-            
-            console.log(`[Snippet] Char before cursor: "${charBeforeCursor}", isTrigger: ${isTriggerChar}`)
-            
-            // Calculate range: include trigger character if present
-            const startColumn = isTriggerChar ? Math.max(1, position.column - 1) : position.column
-            
-            const range = {
-              startLineNumber: position.lineNumber,
-              endLineNumber: position.lineNumber,
-              startColumn: startColumn,
-              endColumn: position.column,
-            }
+            const word = model.getWordUntilPosition(position)
             
             const suggestions = snippets.map((snippet) => ({
               label: snippet.label,
@@ -212,165 +92,63 @@ export default function CodeEditor({
               insertText: snippet.insertText,
               insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
               documentation: snippet.documentation,
-              range: range,
-              sortText: snippet.sortText || '0' + snippet.label,
-              detail: 'Snippet',
-              filterText: snippet.label,
-              // Remove trigger character if it exists - GLOBAL FIX!
-              additionalTextEdits: isTriggerChar ? [{
-                range: {
-                  startLineNumber: position.lineNumber,
-                  startColumn: startColumn,
-                  endLineNumber: position.lineNumber,
-                  endColumn: position.column,
-                },
-                text: '',
-              }] : undefined,
+              range: {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn,
+              },
+              sortText: '0' + snippet.label,
+              detail: snippet.label,
+              // Use the snippet's own prefix as the filter text
+              filterText: snippet.prefix ? snippet.prefix : snippet.label,
             }))
             
             return { suggestions }
           },
         })
         
-        console.log(`[CodeEditor] Registered ${snippets.length} snippets for ${currentLang}`)
+        console.log(`[CodeEditor] ✅ Registered ${snippets.length} snippets for ${currentLang}`)
       } else {
-        console.log(`[CodeEditor] No snippets registered for ${currentLang}`)
+        console.log(`[CodeEditor] ⚠️ No snippets for ${currentLang}`)
       }
-    }, 100)
+    }, 500)
     
-    // Configure editor options
     editor.updateOptions({
-      // Font settings
       fontSize: 14,
       fontFamily: "'Fira Code', 'Courier New', monospace",
       fontLigatures: true,
-      
-      // Minimap
-      minimap: { 
-        enabled: true,
-        maxColumn: 120,
-        renderCharacters: false,
-        showSlider: 'mouseover',
-      },
-      
-      // Scrolling
+      minimap: { enabled: true, maxColumn: 120 },
       scrollBeyondLastLine: false,
-      smoothScrolling: true,
-      mouseWheelScrollSensitivity: 1.5,
-      
-      // Layout
       automaticLayout: true,
       wordWrap: 'on',
-      wordWrapColumn: 120,
-      
-      // Line numbers
       lineNumbers: 'on',
-      lineNumbersMinChars: 3,
-      renderLineHighlight: 'all',
-      renderWhitespace: 'selection',
-      
-      // Code folding
       folding: true,
-      foldingStrategy: 'indentation',
-      showFoldingControls: 'always',
-      foldingHighlight: true,
-      
-      // Bracket matching
       matchBrackets: 'always',
-      bracketPairColorization: {
-        enabled: true,
-      },
-      guides: {
-        bracketPairs: true,
-        indentation: true,
-      },
-      
-      // Indentation
-      autoIndent: 'full',
+      bracketPairColorization: { enabled: true },
       tabSize: 2,
       insertSpaces: true,
-      detectIndentation: true,
-      
-      // Formatting
       formatOnPaste: true,
-      formatOnType: true,
-      
-      // Autocomplete/IntelliSense
-      quickSuggestions: {
-        other: true,
-        comments: false,
-        strings: false,
-      },
-      suggestOnTriggerCharacters: true,
+      quickSuggestions: { other: true, comments: false, strings: false },
       acceptSuggestionOnCommitCharacter: true,
       acceptSuggestionOnEnter: 'on',
-      snippetSuggestions: 'top', // Show snippets at top of suggestions
+      snippetSuggestions: 'top',
+      suggestOnTriggerCharacters: true,
       suggest: {
-        showKeywords: true,
-        showSnippets: true,
-        showWords: true,
-        showClasses: true,
-        showFunctions: true,
-        showVariables: true,
-        showModules: true,
-        showProperties: true,
-        showEvents: true,
-        showOperators: true,
-        showUnits: true,
-        showValues: true,
-        showConstants: true,
-        showEnums: true,
-        showEnumMembers: true,
-        showColors: true,
-        showFiles: true,
-        showReferences: true,
-        showFolders: true,
-        showTypeParameters: true,
-        showConstructors: true,
-        showFields: true,
-        showMethods: true,
-        showInterfaces: true,
+        showKeywords: true, showSnippets: true, showWords: true,
+        showFunctions: true, showVariables: true,
       },
-      
-      // Parameter hints
-      parameterHints: {
-        enabled: true,
-        cycle: true,
-      },
-      
-      // Hover
-      hover: {
-        enabled: true,
-        delay: 300,
-        sticky: true,
-      },
-      
-      // Links
-      links: true,
-      
-      // Cursor
+      parameterHints: { enabled: true },
+      hover: { enabled: true, sticky: true },
       cursorBlinking: 'smooth',
-      cursorSmoothCaretAnimation: 'on',
-      cursorSurroundingLines: 5,
-      
-      // Miscellaneous
-      renderControlCharacters: true,
-      renderFinalNewline: 'on',
-      showUnused: true,
-      occurrencesHighlight: 'singleFile',
-      selectionHighlight: true,
     })
     
-    // Add context menu action for format document
     editor.addAction({
       id: 'format-document',
       label: 'Format Document',
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyI],
       contextMenuGroupId: '1_modification',
-      contextMenuOrder: 1.5,
-      run: (ed: any) => {
-        ed.getAction('editor.action.formatDocument')?.run()
-      },
+      run: (ed: any) => ed.getAction('editor.action.formatDocument')?.run(),
     })
   }
 
@@ -383,13 +161,7 @@ export default function CodeEditor({
         theme="vs-dark"
         onChange={handleEditorChange}
         onMount={handleEditorMount}
-        options={{
-          selectOnLineNumbers: true,
-          roundedSelection: false,
-          readOnly: false,
-          cursorStyle: 'line',
-          automaticLayout: true,
-        }}
+        options={{ selectOnLineNumbers: true, automaticLayout: true }}
       />
     </div>
   )
