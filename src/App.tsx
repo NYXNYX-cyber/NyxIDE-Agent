@@ -6,6 +6,7 @@ import CodeEditor from './components/CodeEditor'
 import MenuBar from './components/MenuBar'
 import Terminal from './components/Terminal'
 import NewFileModal from './components/NewFileModal'
+import ChatPanel from './components/ChatPanel'
 
 // Internal App component that uses context
 function InternalApp() {
@@ -265,21 +266,11 @@ function InternalApp() {
             ×
           </button>
           
-          <div style={{ 
-            height: '100%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            color: '#888',
-            fontSize: '14px',
-            textAlign: 'center',
-            paddingTop: '40px',
-          }}>
-            <div>
-              <p style={{ marginBottom: '8px', fontWeight: 600 }}>💬 AI Assistant</p>
-              <p style={{ fontSize: '12px', color: '#666' }}>AI Integration Week 2</p>
+          {chatOpen && (
+            <div style={{ height: '100%', overflow: 'hidden' }}>
+              <ChatPanel />
             </div>
-          </div>
+          )}
         </div>
 
         {/* Toggle button for chat */}
