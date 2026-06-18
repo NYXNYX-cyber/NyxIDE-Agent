@@ -83,12 +83,6 @@ export default function CodeEditor({
           triggerCharacters: ['<', '!', '.', '#', '@', '/', '$'],
           provideCompletionItems: (model: any, position: any) => {
             const lineContent = model.getLineContent(position.lineNumber)
-            const textUntilPosition = model.getValueInRange({
-              startLineNumber: position.lineNumber,
-              startColumn: 1,
-              endLineNumber: position.lineNumber,
-              endColumn: position.column,
-            })
             
             // Detect trigger character
             const charBeforeCursor = lineContent[position.column - 2] || ''
@@ -108,22 +102,29 @@ export default function CodeEditor({
               endColumn = word.endColumn
             }
             
-            const suggestions = snippets.map((snippet) => ({
-              label: snippet.label,
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: snippet.insertText,
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: snippet.documentation,
-              range: {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn,
-                endColumn,
-              },
-              sortText: '0' + snippet.label,
-              detail: snippet.label,
-              filterText: snippet.label,
-            }))
+            const suggestions = snippets.map((snippet) => {
+              // If trigger char, prepend it to filterText so Monaco can match
+              const filterText = isTriggerChar 
+                ? charBeforeCursor + snippet.label 
+                : snippet.label
+              
+              return {
+                label: snippet.label,
+                kind: monaco.languages.CompletionItemKind.Snippet,
+                insertText: snippet.insertText,
+                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                documentation: snippet.documentation,
+                range: {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn,
+                  endColumn,
+                },
+                sortText: '0' + snippet.label,
+                detail: snippet.label,
+                filterText: filterText,
+              }
+            })
             
             return { suggestions }
           },
