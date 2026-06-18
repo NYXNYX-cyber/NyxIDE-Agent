@@ -1,27 +1,18 @@
 /**
- * AI Service - OpenAI-compatible API client with streaming support
+ * AI Service - Simple fetch-based API client with streaming support
  * 
- * Uses Vercel AI SDK for type-safe AI interactions
+ * Uses native fetch API for maximum compatibility with Electron + Vite
  */
 
-import { createOpenAI } from '@ai-sdk/openai'
-import { streamText } from 'ai'
 import { AI_CONFIG } from '../config/aiConfig'
 
-// Create OpenAI-compatible client with custom baseURL
-export const ai = createOpenAI({
-  baseURL: AI_CONFIG.baseURL,
-  apiKey: AI_CONFIG.apiKey,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// Get model instance
-export const model = ai(AI_CONFIG.model)
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
 
 /**
- * Stream text completion from AI
+ * Stream text completion from AI using native fetch
  * 
  * @param messages - Array of chat messages
  * @param onChunk - Callback for each streamed chunk
@@ -29,30 +20,84 @@ export const model = ai(AI_CONFIG.model)
  * @returns Promise with full response
  */
 export async function streamChatCompletion(
-  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+  messages: ChatMessage[],
   onChunk?: (chunk: string) => void,
   onError?: (error: Error) => void
-) {
+): Promise<string> {
   try {
     console.log('[AI Service] Starting stream chat completion...')
     
-    const result = await streamText({
-      model,
-      messages: [
-        { role: 'system', content: AI_CONFIG.systemPrompt },
-        ...messages,
-      ],
-      maxTokens: AI_CONFIG.maxTokens,
-      temperature: AI_CONFIG.temperature,
+    const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: AI_CONFIG.model,
+        messages: [
+          { role: 'system', content: AI_CONFIG.systemPrompt },
+          ...messages,
+        ],
+        max_tokens: AI_CONFIG.maxTokens,
+        temperature: AI_CONFIG.temperature,
+        stream: true,
+      }),
     })
 
-    // Collect full response while streaming
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    if (!response.body) {
+      throw new Error('Response body is null')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
     let fullResponse = ''
-    
-    for await (const chunk of result.textStream) {
-      fullResponse += chunk
-      if (onChunk) {
-        onChunk(chunk)
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      
+      // Process complete lines
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        
+        // Skip empty lines and comments
+        if (!trimmed || trimmed.startsWith(':')) continue
+        
+        // Skip [DONE] message
+        if (trimmed === 'data: [DONE]') {
+          console.log('[AI Service] Stream completed, total length:', fullResponse.length)
+          return fullResponse
+        }
+        
+        // Parse SSE data
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const json = JSON.parse(trimmed.slice(6))
+            const content = json.choices?.[0]?.delta?.content || ''
+            
+            if (content) {
+              fullResponse += content
+              if (onChunk) {
+                onChunk(content)
+              }
+            }
+          } catch (e) {
+            // Skip invalid JSON
+            continue
+          }
+        }
       }
     }
 
@@ -70,25 +115,37 @@ export async function streamChatCompletion(
 /**
  * Simple non-streaming chat completion (for quick requests)
  */
-export async function chatCompletion(
-  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-) {
+export async function chatCompletion(messages: ChatMessage[]): Promise<string> {
   try {
     console.log('[AI Service] Starting chat completion...')
     
-    const result = await streamText({
-      model,
-      messages: [
-        { role: 'system', content: AI_CONFIG.systemPrompt },
-        ...messages,
-      ],
-      maxTokens: AI_CONFIG.maxTokens,
-      temperature: AI_CONFIG.temperature,
+    const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: AI_CONFIG.model,
+        messages: [
+          { role: 'system', content: AI_CONFIG.systemPrompt },
+          ...messages,
+        ],
+        max_tokens: AI_CONFIG.maxTokens,
+        temperature: AI_CONFIG.temperature,
+        stream: false,
+      }),
     })
 
-    const fullResponse = await result.text
-    console.log('[AI Service] Completion finished, length:', fullResponse.length)
-    return fullResponse
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content || ''
+    
+    console.log('[AI Service] Completion finished, length:', content.length)
+    return content
   } catch (error) {
     console.error('[AI Service] Error in chat completion:', error)
     throw error
@@ -97,8 +154,6 @@ export async function chatCompletion(
 
 // Export for convenience
 export default {
-  ai,
-  model,
   streamChatCompletion,
   chatCompletion,
 }
