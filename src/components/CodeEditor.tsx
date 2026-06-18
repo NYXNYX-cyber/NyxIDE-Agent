@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { getSnippetsForLanguage } from '../utils/snippets'
 
@@ -19,6 +19,9 @@ export default function CodeEditor({
 }: CodeEditorProps) {
   const [editorContent, setEditorContent] = useState(content)
   const [detectedLanguage, setDetectedLanguage] = useState(language || 'plaintext')
+  const editorRef = useRef<any>(null)
+  const monacoRef = useRef<any>(null)
+  const completionProviderRef = useRef<any>(null)
 
   // Auto-detect language from file extension
   useEffect(() => {
@@ -64,7 +67,88 @@ export default function CodeEditor({
     }
   }
 
+  // Register snippets for current language
+  const registerSnippets = (lang: string) => {
+    if (!monacoRef.current) return
+    
+    const monaco = monacoRef.current
+    const snippets = getSnippetsForLanguage(lang)
+    
+    // Dispose previous provider if exists
+    if (completionProviderRef.current) {
+      completionProviderRef.current.dispose()
+    }
+    
+    if (snippets.length > 0) {
+      completionProviderRef.current = monaco.languages.registerCompletionItemProvider(lang, {
+        triggerCharacters: ['<', '!', '.', '#', '@', '/', '$'],
+        provideCompletionItems: (model: any, position: any) => {
+          const lineContent = model.getLineContent(position.lineNumber)
+          
+          // Detect trigger character
+          const charBeforeCursor = lineContent[position.column - 2] || ''
+          const triggerChars = ['<', '!', '.', '#', '@', '/', '$']
+          const isTriggerChar = triggerChars.includes(charBeforeCursor)
+          
+          // Calculate range
+          let startColumn, endColumn
+          if (isTriggerChar) {
+            // Include trigger character in range
+            startColumn = Math.max(1, position.column - 1)
+            endColumn = position.column
+          } else {
+            // Use word boundary
+            const word = model.getWordUntilPosition(position)
+            startColumn = word.startColumn
+            endColumn = word.endColumn
+          }
+          
+          const suggestions = snippets.map((snippet) => {
+            // If trigger char, prepend it to filterText so Monaco can match
+            const filterText = isTriggerChar 
+              ? charBeforeCursor + snippet.label 
+              : snippet.label
+            
+            return {
+              label: snippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: snippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: snippet.documentation,
+              range: {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn,
+                endColumn,
+              },
+              sortText: '0' + snippet.label,
+              detail: snippet.label,
+              filterText: filterText,
+            }
+          })
+          
+          return { suggestions }
+        },
+      })
+      
+      console.log(`[CodeEditor] ✅ Registered ${snippets.length} snippets for ${lang}`)
+    } else {
+      console.log(`[CodeEditor] ⚠️ No snippets for ${lang}`)
+    }
+  }
+
+  // Re-register snippets when language changes
+  useEffect(() => {
+    if (editorRef.current && monacoRef.current) {
+      registerSnippets(detectedLanguage)
+    }
+  }, [detectedLanguage])
+
   const handleEditorMount = (editor: any, monaco: any) => {
+    // Save instances to refs
+    editorRef.current = editor
+    monacoRef.current = monaco
+    
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (onSave) { onSave() }
     })
@@ -73,68 +157,8 @@ export default function CodeEditor({
       editor.getAction('editor.action.formatDocument')?.run()
     })
     
-    // === SNIPPET SYSTEM WITH TRIGGER CHARACTER SUPPORT ===
-    setTimeout(() => {
-      const currentLang = detectedLanguage || 'plaintext'
-      const snippets = getSnippetsForLanguage(currentLang)
-      
-      if (snippets.length > 0) {
-        monaco.languages.registerCompletionItemProvider(currentLang, {
-          triggerCharacters: ['<', '!', '.', '#', '@', '/', '$'],
-          provideCompletionItems: (model: any, position: any) => {
-            const lineContent = model.getLineContent(position.lineNumber)
-            
-            // Detect trigger character
-            const charBeforeCursor = lineContent[position.column - 2] || ''
-            const triggerChars = ['<', '!', '.', '#', '@', '/', '$']
-            const isTriggerChar = triggerChars.includes(charBeforeCursor)
-            
-            // Calculate range
-            let startColumn, endColumn
-            if (isTriggerChar) {
-              // Include trigger character in range
-              startColumn = Math.max(1, position.column - 1)
-              endColumn = position.column
-            } else {
-              // Use word boundary
-              const word = model.getWordUntilPosition(position)
-              startColumn = word.startColumn
-              endColumn = word.endColumn
-            }
-            
-            const suggestions = snippets.map((snippet) => {
-              // If trigger char, prepend it to filterText so Monaco can match
-              const filterText = isTriggerChar 
-                ? charBeforeCursor + snippet.label 
-                : snippet.label
-              
-              return {
-                label: snippet.label,
-                kind: monaco.languages.CompletionItemKind.Snippet,
-                insertText: snippet.insertText,
-                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                documentation: snippet.documentation,
-                range: {
-                  startLineNumber: position.lineNumber,
-                  endLineNumber: position.lineNumber,
-                  startColumn,
-                  endColumn,
-                },
-                sortText: '0' + snippet.label,
-                detail: snippet.label,
-                filterText: filterText,
-              }
-            })
-            
-            return { suggestions }
-          },
-        })
-        
-        console.log(`[CodeEditor] ✅ Registered ${snippets.length} snippets for ${currentLang}`)
-      } else {
-        console.log(`[CodeEditor] ⚠️ No snippets for ${currentLang}`)
-      }
-    }, 500)
+    // Register snippets for current language
+    registerSnippets(detectedLanguage)
     
     editor.updateOptions({
       fontSize: 14,
