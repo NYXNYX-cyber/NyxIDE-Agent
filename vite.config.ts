@@ -16,5 +16,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      // Handle ai SDK dependencies properly
+      external: ['ai'],
+    },
   },
 })
