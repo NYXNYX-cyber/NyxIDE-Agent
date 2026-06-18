@@ -115,6 +115,87 @@ function createWindow() {
     }
   })
 
+  // PTY (Pseudo-Terminal) management for proper terminal emulation
+  const ptyInstances = new Map()
+  
+  ipcMain.handle('pty-create', async (event, options = {}) => {
+    try {
+      const os = await import('os')
+      const { default: pty } = await import('node-pty')
+      
+      const id = Date.now().toString()
+      const cwd = options.cwd || os.homedir()
+      const shell = process.platform === 'win32' ? 'powershell.exe' : 'bash'
+      
+      const ptyProcess = pty.spawn(shell, [], {
+        name: 'xterm-256color',
+        cols: options.cols || 120,
+        rows: options.rows || 24,
+        cwd: cwd,
+        env: {
+          ...process.env,
+          TERM: 'xterm-256color',
+        },
+      })
+      
+      ptyInstances.set(id, ptyProcess)
+      
+      // Forward PTY output to renderer
+      ptyProcess.onData((data) => {
+        mainWindow.webContents.send('pty-data', { id, data })
+      })
+      
+      ptyProcess.onExit(({ exitCode }) => {
+        mainWindow.webContents.send('pty-exit', { id, exitCode })
+        ptyInstances.delete(id)
+      })
+      
+      return { success: true, id }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('pty-write', async (event, id, data) => {
+    try {
+      const ptyProcess = ptyInstances.get(id)
+      if (ptyProcess) {
+        ptyProcess.write(data)
+        return { success: true }
+      }
+      return { success: false, error: 'PTY instance not found' }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('pty-resize', async (event, id, cols, rows) => {
+    try {
+      const ptyProcess = ptyInstances.get(id)
+      if (ptyProcess) {
+        ptyProcess.resize(cols, rows)
+        return { success: true }
+      }
+      return { success: false, error: 'PTY instance not found' }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('pty-kill', async (event, id) => {
+    try {
+      const ptyProcess = ptyInstances.get(id)
+      if (ptyProcess) {
+        ptyProcess.kill()
+        ptyInstances.delete(id)
+        return { success: true }
+      }
+      return { success: false, error: 'PTY instance not found' }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  })
+
   ipcMain.handle('exec-command', async (event, command, options = {}) => {
     try {
       const { exec } = await import('child_process')

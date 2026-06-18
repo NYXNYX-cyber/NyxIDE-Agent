@@ -10,8 +10,18 @@ contextBridge.exposeInMainWorld('nyxide', {
   createDirectory: (path) => ipcRenderer.invoke('create-directory', path),
   deleteFile: (path) => ipcRenderer.invoke('delete-file', path),
   
-  // Command execution
+  // Command execution (legacy)
   execCommand: (command, options) => ipcRenderer.invoke('exec-command', command, options),
+  
+  // PTY (Pseudo-Terminal) operations
+  ptyCreate: (options) => ipcRenderer.invoke('pty-create', options),
+  ptyWrite: (id, data) => ipcRenderer.invoke('pty-write', id, data),
+  ptyResize: (id, cols, rows) => ipcRenderer.invoke('pty-resize', id, cols, rows),
+  ptyKill: (id) => ipcRenderer.invoke('pty-kill', id),
+  
+  // PTY event listeners
+  onPtyData: (callback) => ipcRenderer.on('pty-data', (event, payload) => callback(payload)),
+  onPtyExit: (callback) => ipcRenderer.on('pty-exit', (event, payload) => callback(payload)),
   
   // Tab management
   openFile: (path) => ipcRenderer.invoke('open-file', path),

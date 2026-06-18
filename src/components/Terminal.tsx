@@ -12,14 +12,15 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+  const ptyIdRef = useRef<string>('')
+  const ptyProcessReady = useRef<boolean>(false)
 
   useEffect(() => {
     if (!terminalRef.current || xtermRef.current) return
 
     let resizeHandler: (() => void) | null = null
 
-    // Small delay to ensure DOM is ready
-    const initTerminal = () => {
+    const initTerminal = async () => {
       if (!terminalRef.current) return
 
       // Initialize xterm
@@ -32,6 +33,7 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
           foreground: '#cccccc',
           cursor: '#cccccc',
         },
+        scrollback: 10000, // Increased scrollback
       })
 
       const fitAddon = new FitAddon()
@@ -57,50 +59,25 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
       term.writeln('\x1b[90mType "help" for available commands\x1b[0m')
       term.writeln('')
 
-      // Handle terminal input
-      let currentLine = ''
-      
+      // Setup shell mode - no command parsing needed
+      // Just forward all input to PTY
       term.onData((data) => {
-        if (data === '\r') {
-          // Enter key
-          term.write('\r\n')
-          
-          if (currentLine.trim()) {
-            // Execute command via IPC
-            executeCommand(currentLine.trim(), term)
-          } else {
-            // Empty command, just show prompt
-            term.write('\x1b[1;34m$\x1b[0m ')
-          }
-          
-          currentLine = ''
-        } else if (data === '\x7f') {
-          // Backspace
-          if (currentLine.length > 0) {
-            currentLine = currentLine.slice(0, -1)
-            term.write('\b \b')
-          }
-        } else if (data === '\x03') {
-          // Ctrl+C
-          term.write('^C\r\n')
-          currentLine = ''
-          term.write('\x1b[1;34m$\x1b[0m ')
+        if (ptyIdRef.current && ptyProcessReady.current) {
+          ;(window as any).nyxide.ptyWrite(ptyIdRef.current, data)
         } else {
-          // Regular character
-          currentLine += data
-          term.write(data)
+          term.write('\x1b[1;33mWaiting for terminal...\x1b[0m\r\n')
         }
       })
 
-      // Show initial prompt
-      term.write('\x1b[1;34m$\x1b[0m ')
-
       // Handle resize
       resizeHandler = () => {
-        if (fitAddonRef.current) {
+        if (fitAddonRef.current && ptyIdRef.current) {
           setTimeout(() => {
             try {
               fitAddonRef.current?.fit()
+              const cols = term.cols
+              const rows = term.rows
+              ;(window as any).nyxide.ptyResize(ptyIdRef.current, cols, rows)
             } catch (error) {
               console.error('Failed to fit terminal on resize:', error)
             }
@@ -109,6 +86,40 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
       }
 
       window.addEventListener('resize', resizeHandler)
+
+      // Create PTY process
+      try {
+        const result = await (window as any).nyxide.ptyCreate({
+          cwd: cwd || undefined,
+          cols: term.cols,
+          rows: term.rows,
+        })
+        
+        if (result.success) {
+          ptyIdRef.current = result.id
+          ptyProcessReady.current = true
+          term.write('\r\n')
+          
+          // Listen to PTY data
+          ;(window as any).nyxide.onPtyData((payload) => {
+            if (payload.id === ptyIdRef.current) {
+              term.write(payload.data)
+            }
+          })
+          
+          // Listen to PTY exit
+          ;(window as any).nyxide.onPtyExit((payload) => {
+            if (payload.id === ptyIdRef.current) {
+              term.write(`\r\nPTY exited with code ${payload.exitCode}\r\n`)
+              ptyProcessReady.current = false
+            }
+          })
+        } else {
+          term.writeln(`\x1b[31mError creating PTY: ${result.error}\x1b[0m`)
+        }
+      } catch (error: any) {
+        term.writeln(`\x1b[31mError: ${error.message}\x1b[0m`)
+      }
     }
 
     // Initialize after a small delay
@@ -123,6 +134,11 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
         xtermRef.current.dispose()
         xtermRef.current = null
         fitAddonRef.current = null
+      }
+      // Clean up PTY
+      if (ptyIdRef.current) {
+        ;(window as any).nyxide.ptyKill(ptyIdRef.current)
+        ptyIdRef.current = ''
       }
     }
   }, [])
@@ -139,66 +155,6 @@ export default function Terminal({ visible, cwd }: TerminalProps) {
       }, 150)
     }
   }, [visible])
-
-  const executeCommand = async (command: string, term: XTerm) => {
-    try {
-      // Handle built-in commands
-      if (command === 'help') {
-        term.writeln('\x1b[1;33mAvailable commands:\x1b[0m')
-        term.writeln('  help          - Show this help message')
-        term.writeln('  clear         - Clear terminal')
-        term.writeln('  echo <text>   - Echo text')
-        term.writeln('  date          - Show current date/time')
-        term.writeln('  whoami        - Show current user')
-        term.writeln('  pwd           - Print working directory')
-        term.writeln('  ls            - List directory contents')
-        term.writeln('  exit          - Close terminal')
-        term.writeln('')
-        term.write('\x1b[1;34m$\x1b[0m ')
-        return
-      }
-
-      if (command === 'clear') {
-        term.clear()
-        term.write('\x1b[1;34m$\x1b[0m ')
-        return
-      }
-
-      if (command === 'exit') {
-        term.writeln('\x1b[90mTerminal closed. Press Ctrl+` to reopen.\x1b[0m')
-        return
-      }
-
-      // Execute via IPC with working directory and terminal dimensions
-      const cols = xtermRef.current?.cols || 120  // Wider default for better formatting
-      const rows = xtermRef.current?.rows || 24
-      const result = await (window as any).nyxide.execCommand(command, {
-        cwd: cwd,  // Will use home dir if undefined (handled in main.js)
-        columns: cols,
-        rows: rows,
-      })
-      
-      if (result.success) {
-        // Write stdout directly - preserve original formatting from command
-        if (result.stdout) {
-          // Remove trailing newline only (to avoid double spacing)
-          const output = result.stdout.replace(/\n$/, '')
-          term.writeln(output)
-        }
-        if (result.stderr && !result.stdout) {
-          const errorOutput = result.stderr.replace(/\n$/, '')
-          term.writeln(`\x1b[31m${errorOutput}\x1b[0m`)
-        }
-      } else {
-        term.writeln(`\x1b[31mError: ${result.error || 'Command failed'}\x1b[0m`)
-      }
-      
-      term.write('\x1b[1;34m$\x1b[0m ')
-    } catch (error: any) {
-      term.writeln(`\x1b[31mError: ${error.message}\x1b[0m`)
-      term.write('\x1b[1;34m$\x1b[0m ')
-    }
-  }
 
   return (
     <div
