@@ -60,22 +60,22 @@ export default function ChatInput({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={disabled ? 'AI is processing...' : placeholder}
+          placeholder="Ask me anything..."
           disabled={disabled}
           rows={1}
           style={{
             flex: 1,
-            padding: '10px 14px',
+            padding: '12px 14px',
             border: '1px solid #d1d5db',
             borderRadius: '6px',
-            fontSize: '13px',
+            fontSize: '14px',
             lineHeight: '1.5',
             outline: 'none',
             backgroundColor: disabled ? '#f3f4f6' : '#fff',
             resize: 'none',
             fontFamily: 'inherit',
-            minHeight: '42px',
-            maxHeight: '120px',
+            minHeight: '40px',
+            maxHeight: '100px',
           }}
         />
 
@@ -83,36 +83,21 @@ export default function ChatInput({
           type="submit"
           disabled={!inputValue.trim() || disabled}
           style={{
-            padding: '8px 12px',
-            backgroundColor:
-              !inputValue.trim() || disabled ? '#d1d5db' : '#007acc',
+            width: '38px',
+            height: '40px',
+            padding: '0',
+            backgroundColor: !inputValue.trim() || disabled ? '#d1d5db' : '#007acc',
             color: '#fff',
             border: 'none',
             borderRadius: '6px',
-            cursor:
-              !inputValue.trim() || disabled ? 'not-allowed' : 'pointer',
-            fontSize: '13px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            height: '38px',
+            cursor: !inputValue.trim() || disabled ? 'not-allowed' : 'pointer',
+            fontSize: '16px',
             transition: 'all 0.2s',
+            opacity: 0.9,
           }}
         >
           <SendOutlined />
         </button>
-      </div>
-
-      <div
-        style={{
-          marginTop: '8px',
-          fontSize: '11px',
-          color: '#888',
-          textAlign: 'center',
-        }}
-      >
-        Press <kbd style={{ padding: '2px 6px', backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '3px', fontSize: '10px' }}>Enter</kbd> to send, <kbd style={{ padding: '2px 6px', backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '3px', fontSize: '10px' }}>Shift+Enter</kbd> for new line
       </div>
     </form>
   )
