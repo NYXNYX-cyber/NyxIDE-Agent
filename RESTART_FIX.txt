@@ -1,0 +1,48 @@
+# 🚨 FIX BLANK SCREEN - QUICK RESTART
+
+**Problem:** Blank white screen dengan error "AIMessage not exported"
+
+**Solution:** Hard restart dengan clear cache total
+
+---
+
+## 🔥 Quick Fix Command (Run All At Once):
+
+```bash
+# 1. Kill all node/electron/vite processes
+pkill -9 -E 'node|electron|vite'
+
+# 2. Wait for processes to stop
+sleep 3
+
+# 3. Remove all caches
+rm -rf /home/nyx/Documents/nyxide/node_modules/.vite
+rm -rf /home/nyx/Documents/nyxide/dist
+rm -rf /home/nyx/Documents/nyxide/release
+
+# 4. Restart dev server
+cd /home/nyx/Documents/nyxide && npm run dev
+```
+
+---
+
+## ✅ Expected Result:
+
+Setelah restart:
+- ✅ Sidebar kiri menampilkan **ChatPanel** (bukan putih kosong)
+- ✅ Header: "🤖 NyxIDE Assistant"
+- ✅ Input field: "Ask me anything..."
+- ✅ Tidak ada error di console
+
+---
+
+## 🐛 If Still Blank:
+
+1. **Open DevTools Console** (F12 atau Ctrl+Shift+I)
+2. **Look for errors** - take a screenshot
+3. **Common issues:**
+   - ❌ Network error → API endpoint problem
+   - ❌ CORS error → Need proxy config
+   - ❌ TypeError → Import issue still there
+
+Screenshot the console if you see errors!
