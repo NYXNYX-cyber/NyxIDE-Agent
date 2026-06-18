@@ -27,7 +27,7 @@ interface AIState {
   error: string | null
   
   // Actions
-  addMessage: (message: Omit<AIMessage, 'id' | 'timestamp'>) => void
+  addMessage: (message: Omit<AIMessage, 'id' | 'timestamp'>) => string
   updateStreamingMessage: (id: string, content: string) => void
   finalizeStreamingMessage: (id: string) => void
   setLoading: (loading: boolean) => void
@@ -48,17 +48,18 @@ export const useAIStore = create<AIState>()(
       isStreaming: false,
       error: null,
       
-      addMessage: (message) => set((state) => {
+      addMessage: (message) => {
         const newMessage: AIMessage = {
           ...message,
           id: crypto.randomUUID(),
           timestamp: Date.now(),
         }
-        return {
+        set((state) => ({
           messages: [...state.messages, newMessage],
           error: null,
-        }
-      }),
+        }))
+        return newMessage.id // Return the generated ID
+      },
       
       updateStreamingMessage: (id, content) => set((state) => ({
         messages: state.messages.map(msg =>

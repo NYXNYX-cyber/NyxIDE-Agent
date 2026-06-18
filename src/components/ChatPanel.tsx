@@ -35,14 +35,11 @@ export default function ChatPanel() {
     setLoading(true)
     setError(null)
 
-    // Add placeholder assistant message for streaming
-    const assistantMessageId = crypto.randomUUID()
-    addMessage({
+    // Add placeholder assistant message for streaming and get its ID
+    const assistantMessageId = addMessage({
       role: 'assistant',
       content: '',
       isStreaming: true,
-      // @ts-ignore - temporary id override for streaming
-      id: assistantMessageId,
     })
 
     setStreaming(true)
@@ -51,8 +48,9 @@ export default function ChatPanel() {
       console.log('[ChatPanel] Starting AI stream...')
 
       // Get recent messages for context (excluding the placeholder)
-      const contextMessages = messages
-        .filter(m => m.id !== assistantMessageId)
+      const currentMessages = useAIStore.getState().messages
+      const contextMessages = currentMessages
+        .slice(0, -1) // Exclude the last placeholder message
         .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
 
       // Add current user message to context
@@ -79,7 +77,7 @@ export default function ChatPanel() {
       console.error('[ChatPanel] Error:', error)
       setError(error instanceof Error ? error.message : 'Unknown error occurred')
 
-      // Remove placeholder message on error
+      // Update placeholder message with error
       updateStreamingMessage(assistantMessageId, '❌ Error connecting to AI service. Please try again.')
       finalizeStreamingMessage(assistantMessageId)
     } finally {
