@@ -5,6 +5,7 @@ import EditorTabs from './components/EditorTabs'
 import CodeEditor from './components/CodeEditor'
 import MenuBar from './components/MenuBar'
 import Terminal from './components/Terminal'
+import NewFileModal from './components/NewFileModal'
 
 // Internal App component that uses context
 function InternalApp() {
@@ -13,6 +14,7 @@ function InternalApp() {
   const [explorerOpen, setExplorerOpen] = useState(true)
   const [terminalOpen, setTerminalOpen] = useState(false)
   const [currentFolder, setCurrentFolder] = useState<string>('')
+  const [newFileModalOpen, setNewFileModalOpen] = useState(false)
 
   // Get active tab content
   const activeTab = tabs.find(tab => tab.path === activeTabPath)
@@ -36,22 +38,24 @@ function InternalApp() {
   }, [activeTabPath, saveFile])
 
   const handleNewFile = useCallback(() => {
-    const name = prompt('Enter new file name:')
-    if (name) {
-      const defaultPath = explorerOpen && activeTab ? 
-        activeTab.path.substring(0, activeTab.path.lastIndexOf('/')) + '/' : ''
-      const fullPath = defaultPath + name
-      
-      // Create empty file
-      ;(window as any).nyxide.writeFile(fullPath, '').then(result => {
-        if (result.success) {
-          openFile(fullPath)
-        } else {
-          alert('Failed to create file: ' + result.error)
-        }
-      })
+    setNewFileModalOpen(true)
+  }, [])
+
+  const handleCreateFile = useCallback(async (fileName: string) => {
+    if (!currentFolder) {
+      throw new Error('No folder selected')
     }
-  }, [activeTab, openFile, explorerOpen])
+
+    const fullPath = currentFolder + '/' + fileName
+    
+    // Create empty file
+    const result = await (window as any).nyxide.writeFile(fullPath, '')
+    if (result.success) {
+      await openFile(fullPath)
+    } else {
+      throw new Error(result.error || 'Failed to create file')
+    }
+  }, [currentFolder, openFile])
 
   const handleOpenFolder = useCallback(() => {
     ;(window as any).nyxide.openFolderDialog().then(result => {
@@ -485,6 +489,14 @@ function InternalApp() {
         <div style={{ flex: 1 }} />
         <span>NyxIDE v0.1.0</span>
       </div>
+      
+      {/* New File Modal */}
+      <NewFileModal
+        open={newFileModalOpen}
+        defaultPath={currentFolder}
+        onClose={() => setNewFileModalOpen(false)}
+        onCreateFile={handleCreateFile}
+      />
     </div>
   )
 }
