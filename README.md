@@ -363,8 +363,6 @@ NyxIDE uses an external AI API service. Configure via Settings UI (Week 4):
 **Model:** `kiro/claude-sonnet-4.5-thinking-agentic`  
 **Auth:** Bearer token in Authorization header
 
-See [IDE_AGENT_PLANNING.md](./IDE_AGENT_PLANNING.md) for detailed API spec.
-
 ## 🎨 Design Philosophy
 
 ### Layout
@@ -380,12 +378,6 @@ Dark mode default (VS Code Dark+) with light mode toggle
 4. **Fast startup** - < 3 seconds cold start target
 5. **Memory efficient** - < 500MB RAM idle target
 
-## 📚 Documentation
-
-- [IDE_AGENT_PLANNING.md](./IDE_AGENT_PLANNING.md) - Full project specification, timeline, tech stack rationale
-- [MCP.md](./MCP.md) - Image analysis rules, MCP tool usage guides
-- [AGENTS.md](./AGENTS.md) - Quick reference for development agents, critical gotchas
-
 ## 🤝 Contributing
 
 This is currently a personal/open-source project. We welcome contributions!
@@ -393,9 +385,8 @@ This is currently a personal/open-source project. We welcome contributions!
 When contributing:
 1. Follow existing documentation patterns
 2. Add tests for new features (Vitest + Playwright)
-3. Update relevant MD files when changing specs
-4. Keep commit messages descriptive
-5. Follow TypeScript strict mode
+3. Keep commit messages descriptive
+4. Follow TypeScript strict mode
 
 ## 📄 License
 
