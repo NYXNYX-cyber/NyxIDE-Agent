@@ -6,8 +6,8 @@
  */
 
 export const AI_CONFIG = {
-  // API Endpoint & Authentication
-  baseURL: 'http://192.168.1.10:20128/v1',
+  // API Endpoint & Authentication (Development with Proxy)
+  baseURL: '/api/v1',
   apiKey: 'sk-7c385384dc41adf3-8s0uu8-02500fae',
   model: 'gc/gemini-3.1-pro-preview',
   

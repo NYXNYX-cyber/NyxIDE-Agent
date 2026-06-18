@@ -12,6 +12,14 @@ export default defineConfig({
   base: './',
   server: {
     port: 5173,
+    proxy: {
+      // Proxy API requests to avoid CORS issues
+      '/api': {
+        target: 'http://192.168.1.10:20128',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
   build: {
     outDir: 'dist',

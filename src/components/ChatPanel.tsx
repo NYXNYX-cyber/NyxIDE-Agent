@@ -113,6 +113,7 @@ export default function ChatPanel() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
+          paddingRight: '40px', // Space for close button
         }}
       >
         <RobotOutlined style={{ color: '#007acc', fontSize: '20px' }} />

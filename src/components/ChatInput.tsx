@@ -83,7 +83,7 @@ export default function ChatInput({
           type="submit"
           disabled={!inputValue.trim() || disabled}
           style={{
-            padding: '10px 20px',
+            padding: '8px 12px',
             backgroundColor:
               !inputValue.trim() || disabled ? '#d1d5db' : '#007acc',
             color: '#fff',
@@ -96,12 +96,11 @@ export default function ChatInput({
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            height: '42px',
+            height: '38px',
             transition: 'all 0.2s',
           }}
         >
           <SendOutlined />
-          Send
         </button>
       </div>
 
