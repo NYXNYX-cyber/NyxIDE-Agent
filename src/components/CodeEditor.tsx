@@ -74,10 +74,13 @@ export default function CodeEditor({
     })
     
     // Register HTML snippets - UNCONDITIONAL (fix race condition)
-    monaco.languages.registerCompletionItemProvider('html', {
+    console.log('[CodeEditor] Registering HTML snippets...')
+    const provider = monaco.languages.registerCompletionItemProvider('html', {
       triggerCharacters: ['<', '!', '/', '.', 'h', 'd', 'p', 'u', 'o', 'l', 'a', 'i', 'b', 'f', 't', 's'],
       provideCompletionItems: (model: any, position: any) => {
+        console.log('[CodeEditor] provideCompletionItems CALLED at position:', position)
         const word = model.getWordAtPosition(position)
+        console.log('[CodeEditor] Word at position:', word)
         const range = {
           startLineNumber: position.lineNumber,
           endLineNumber: position.lineNumber,
@@ -224,11 +227,31 @@ export default function CodeEditor({
           },
         ]
 
+        console.log(`[CodeEditor] Returning ${suggestions.length} suggestions`)
         return { suggestions }
       },
     })
 
-    console.log('[CodeEditor] ✅ HTML snippets registered (unconditional)')
+    console.log('[CodeEditor] ✅ HTML snippets registered (unconditional)', provider)
+    
+    // Add content change listener to manually trigger completion
+    editor.onDidChangeModelContent(() => {
+      const position = editor.getPosition()
+      const model = editor.getModel()
+      if (!position || !model) return
+      
+      const lineContent = model.getLineContent(position.lineNumber)
+      const charBeforeCursor = lineContent[position.column - 2] || ''
+      const triggerChars = ['<', '!', '/', '.', 'h', 'd', 'p', 'u', 'o', 'l', 'a', 'i', 'b', 'f', 't', 's']
+      
+      console.log('[CodeEditor] Content changed, char before cursor:', charBeforeCursor)
+      
+      // Manually trigger completion if we type a trigger character
+      if (triggerChars.includes(charBeforeCursor.toLowerCase())) {
+        console.log('[CodeEditor] Triggering completion manually')
+        editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+      }
+    })
     
     editor.updateOptions({
       fontSize: 14,
