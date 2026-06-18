@@ -76,11 +76,103 @@ export const htmlSnippets: Snippet[] = [
     documentation: 'Button',
   },
   {
-    label: 'form',
-    insertText: `<form action="\$1" method="\${2:post}">
+    label: 'btn',
+    insertText: '<button type="\${1:button}">\${2:Button}</button>',
+    documentation: 'Button (shortcut)',
+  },
+  {
+    label: 'h1',
+    insertText: '<h1>\${1:Heading 1}</h1>',
+    documentation: 'Heading 1',
+  },
+  {
+    label: 'h2',
+    insertText: '<h2>\${1:Heading 2}</h2>',
+    documentation: 'Heading 2',
+  },
+  {
+    label: 'h3',
+    insertText: '<h3>\${1:Heading 3}</h3>',
+    documentation: 'Heading 3',
+  },
+  {
+    label: 'h4',
+    insertText: '<h4>\${1:Heading 4}</h4>',
+    documentation: 'Heading 4',
+  },
+  {
+    label: 'h5',
+    insertText: '<h5>\${1:Heading 5}</h5>',
+    documentation: 'Heading 5',
+  },
+  {
+    label: 'h6',
+    insertText: '<h6>\${1:Heading 6}</h6>',
+    documentation: 'Heading 6',
+  },
+  {
+    label: 'p',
+    insertText: '<p>\${1:Paragraph}</p>',
+    documentation: 'Paragraph',
+  },
+  {
+    label: 'span',
+    insertText: '<span>\$0</span>',
+    documentation: 'Span element',
+  },
+  {
+    label: 'spanc',
+    insertText: '<span class="\$1">\${0}</span>',
+    documentation: 'Span with class',
+  },
+  {
+    label: 'section',
+    insertText: `<section>
   \$0
-</form>`,
-    documentation: 'Form',
+</section>`,
+    documentation: 'Section element',
+  },
+  {
+    label: 'article',
+    insertText: `<article>
+  \$0
+</article>`,
+    documentation: 'Article element',
+  },
+  {
+    label: 'header',
+    insertText: `<header>
+  \$0
+</header>`,
+    documentation: 'Header element',
+  },
+  {
+    label: 'footer',
+    insertText: `<footer>
+  \$0
+</footer>`,
+    documentation: 'Footer element',
+  },
+  {
+    label: 'nav',
+    insertText: `<nav>
+  \$0
+</nav>`,
+    documentation: 'Navigation element',
+  },
+  {
+    label: 'main',
+    insertText: `<main>
+  \$0
+</main>`,
+    documentation: 'Main content element',
+  },
+  {
+    label: 'aside',
+    insertText: `<aside>
+  \$0
+</aside>`,
+    documentation: 'Aside element',
   },
   {
     label: 'ul',
@@ -95,6 +187,11 @@ export const htmlSnippets: Snippet[] = [
   <li>\$0</li>
 </ol>`,
     documentation: 'Ordered list',
+  },
+  {
+    label: 'li',
+    insertText: '<li>\$0</li>',
+    documentation: 'List item',
   },
   {
     label: 'table',
@@ -113,9 +210,100 @@ export const htmlSnippets: Snippet[] = [
     documentation: 'Table',
   },
   {
+    label: 'thead',
+    insertText: `<thead>
+  <tr>
+    <th>\$0</th>
+  </tr>
+</thead>`,
+    documentation: 'Table head',
+  },
+  {
+    label: 'tbody',
+    insertText: `<tbody>
+  <tr>
+    <td>\$0</td>
+  </tr>
+</tbody>`,
+    documentation: 'Table body',
+  },
+  {
+    label: 'tr',
+    insertText: `<tr>
+  <td>\$0</td>
+</tr>`,
+    documentation: 'Table row',
+  },
+  {
+    label: 'th',
+    insertText: '<th>\$0</th>',
+    documentation: 'Table header cell',
+  },
+  {
+    label: 'td',
+    insertText: '<td>\$0</td>',
+    documentation: 'Table data cell',
+  },
+  {
+    label: 'form',
+    insertText: `<form action="\$1" method="\${2:post}">
+  \$0
+</form>`,
+    documentation: 'Form',
+  },
+  {
+    label: 'inputtext',
+    insertText: '<input type="text" name="\$1" id="\$2" placeholder="\$3">',
+    documentation: 'Text input',
+  },
+  {
+    label: 'inputemail',
+    insertText: '<input type="email" name="\$1" id="\$2" placeholder="\$3">',
+    documentation: 'Email input',
+  },
+  {
+    label: 'inputpassword',
+    insertText: '<input type="password" name="\$1" id="\$2">',
+    documentation: 'Password input',
+  },
+  {
+    label: 'inputsubmit',
+    insertText: '<input type="submit" value="\${1:Submit}">',
+    documentation: 'Submit button',
+  },
+  {
+    label: 'textarea',
+    insertText: `<textarea name="\$1" id="\$2" rows="\${3:4}" cols="\${4:50}">\$0</textarea>`,
+    documentation: 'Textarea',
+  },
+  {
+    label: 'select',
+    insertText: `<select name="\$1" id="\$2">
+  <option value="\$3">\${4:Option}</option>
+</select>`,
+    documentation: 'Select dropdown',
+  },
+  {
+    label: 'option',
+    insertText: '<option value="\$1">\${2:Option}</option>',
+    documentation: 'Select option',
+  },
+  {
+    label: 'label',
+    insertText: '<label for="\$1">\${2:Label}</label>',
+    documentation: 'Label',
+  },
+  {
     label: 'script',
     insertText: '<script src="\$1"></script>',
     documentation: 'Script tag',
+  },
+  {
+    label: 'scriptinline',
+    insertText: `<script>
+  \$0
+</script>`,
+    documentation: 'Inline script',
   },
   {
     label: 'style',
@@ -133,6 +321,104 @@ export const htmlSnippets: Snippet[] = [
     label: 'meta',
     insertText: '<meta name="\$1" content="\$2">',
     documentation: 'Meta tag',
+  },
+  {
+    label: 'metacharset',
+    insertText: '<meta charset="UTF-8">',
+    documentation: 'Meta charset',
+  },
+  {
+    label: 'metaviewport',
+    insertText: '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    documentation: 'Meta viewport',
+  },
+  {
+    label: 'br',
+    insertText: '<br>',
+    documentation: 'Line break',
+  },
+  {
+    label: 'hr',
+    insertText: '<hr>',
+    documentation: 'Horizontal rule',
+  },
+  {
+    label: 'strong',
+    insertText: '<strong>\${1:text}</strong>',
+    documentation: 'Strong/bold text',
+  },
+  {
+    label: 'em',
+    insertText: '<em>\${1:text}</em>',
+    documentation: 'Emphasis/italic text',
+  },
+  {
+    label: 'b',
+    insertText: '<b>\${1:text}</b>',
+    documentation: 'Bold text',
+  },
+  {
+    label: 'i',
+    insertText: '<i>\${1:text}</i>',
+    documentation: 'Italic text',
+  },
+  {
+    label: 'u',
+    insertText: '<u>\${1:text}</u>',
+    documentation: 'Underline text',
+  },
+  {
+    label: 'code',
+    insertText: '<code>\$0</code>',
+    documentation: 'Code inline',
+  },
+  {
+    label: 'pre',
+    insertText: `<pre>
+\$0
+</pre>`,
+    documentation: 'Preformatted text',
+  },
+  {
+    label: 'video',
+    insertText: `<video controls width="\${1:640}" height="\${2:360}">
+  <source src="\$3" type="video/mp4">
+  Your browser does not support the video tag.
+</video>`,
+    documentation: 'Video element',
+  },
+  {
+    label: 'audio',
+    insertText: `<audio controls>
+  <source src="\$1" type="audio/mpeg">
+  Your browser does not support the audio tag.
+</audio>`,
+    documentation: 'Audio element',
+  },
+  {
+    label: 'iframe',
+    insertText: '<iframe src="\$1" width="\${2:600}" height="\${3:400}" frameborder="0"></iframe>',
+    documentation: 'Iframe',
+  },
+  {
+    label: 'canvas',
+    insertText: '<canvas id="\$1" width="\${2:300}" height="\${3:150}"></canvas>',
+    documentation: 'Canvas element',
+  },
+  {
+    label: 'details',
+    insertText: `<details>
+  <summary>\${1:Summary}</summary>
+  \$0
+</details>`,
+    documentation: 'Details/accordion',
+  },
+  {
+    label: 'dialog',
+    insertText: `<dialog>
+  \$0
+</dialog>`,
+    documentation: 'Dialog/modal',
   },
 ]
 
