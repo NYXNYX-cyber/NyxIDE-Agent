@@ -64,7 +64,7 @@ export default function CodeEditor({
   }
 
   const handleEditorMount = (editor: any, monaco: any) => {
-    // Save shortcuts
+    // Keyboard shortcuts
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (onSave) { onSave() }
     })
@@ -73,186 +73,164 @@ export default function CodeEditor({
       editor.getAction('editor.action.formatDocument')?.run()
     })
     
-    // Register HTML snippets - UNCONDITIONAL (fix race condition)
-    console.log('[CodeEditor] Registering HTML snippets...')
-    const provider = monaco.languages.registerCompletionItemProvider('html', {
-      triggerCharacters: ['<', '!', '/', '.', 'h', 'd', 'p', 'u', 'o', 'l', 'a', 'i', 'b', 'f', 't', 's'],
-      provideCompletionItems: (model: any, position: any) => {
-        console.log('[CodeEditor] provideCompletionItems CALLED at position:', position)
-        const word = model.getWordAtPosition(position)
-        console.log('[CodeEditor] Word at position:', word)
-        const range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word ? word.startColumn : position.column,
-          endColumn: word ? word.endColumn : position.column,
-        }
-
-        const suggestions = [
-          {
-            label: 'h1',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<h1>${1:Heading 1}</h1>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Heading 1',
-            range,
-          },
-          {
-            label: 'h2',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<h2>${1:Heading 2}</h2>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Heading 2',
-            range,
-          },
-          {
-            label: 'h3',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<h3>${1:Heading 3}</h3>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Heading 3',
-            range,
-          },
-          {
-            label: 'p',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<p>${1:Paragraph}</p>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Paragraph',
-            range,
-          },
-          {
-            label: 'div',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<div>${1}</div>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Div element',
-            range,
-          },
-          {
-            label: 'span',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<span>${1}</span>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Span element',
-            range,
-          },
-          {
-            label: 'ul',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<ul>\n  <li>${1}</li>\n</ul>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Unordered list',
-            range,
-          },
-          {
-            label: 'ol',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<ol>\n  <li>${1}</li>\n</ol>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Ordered list',
-            range,
-          },
-          {
-            label: 'li',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<li>${1}</li>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'List item',
-            range,
-          },
-          {
-            label: 'a',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<a href="${1}">${2:Link}</a>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Anchor link',
-            range,
-          },
-          {
-            label: 'img',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<img src="${1}" alt="${2}" />',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Image',
-            range,
-          },
-          {
-            label: 'button',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<button>${1:Click me}</button>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Button',
-            range,
-          },
-          {
-            label: 'form',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<form action="${1}" method="${2:post}">\n  ${3}\n</form>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Form',
-            range,
-          },
-          {
-            label: 'input',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<input type="${1:text}" name="${2}" />',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Input field',
-            range,
-          },
-          {
-            label: 'table',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<table>\n  <thead>\n    <tr>\n      <th>${1}</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>${2}</td>\n    </tr>\n  </tbody>\n</table>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'Table',
-            range,
-          },
-          {
-            label: 'html5',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${1:Document}</title>\n</head>\n<body>\n  ${2}\n</body>\n</html>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'HTML5 boilerplate',
-            range,
-          },
-          {
-            label: '!',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${1:Document}</title>\n</head>\n<body>\n  ${2}\n</body>\n</html>',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: 'HTML5 boilerplate',
-            range,
-          },
-        ]
-
-        console.log(`[CodeEditor] Returning ${suggestions.length} suggestions`)
-        return { suggestions }
-      },
-    })
-
-    console.log('[CodeEditor] ✅ HTML snippets registered (unconditional)', provider)
+    // Register HTML snippets for HTML and PHP
+    console.log('[CodeEditor] Registering snippets...')
     
-    // Add content change listener to manually trigger completion
-    editor.onDidChangeModelContent(() => {
-      const position = editor.getPosition()
-      const model = editor.getModel()
-      if (!position || !model) return
-      
-      const lineContent = model.getLineContent(position.lineNumber)
-      const charBeforeCursor = lineContent[position.column - 2] || ''
-      const triggerChars = ['<', '!', '/', '.', 'h', 'd', 'p', 'u', 'o', 'l', 'a', 'i', 'b', 'f', 't', 's']
-      
-      console.log('[CodeEditor] Content changed, char before cursor:', charBeforeCursor)
-      
-      // Manually trigger completion if we type a trigger character
-      if (triggerChars.includes(charBeforeCursor.toLowerCase())) {
-        console.log('[CodeEditor] Triggering completion manually')
-        editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
-      }
+    const languages = ['html', 'php']
+    
+    languages.forEach(lang => {
+      monaco.languages.registerCompletionItemProvider(lang, {
+        provideCompletionItems: (model: any, position: any) => {
+          console.log(`[CodeEditor] provideCompletionItems called for ${lang}`)
+          
+          const word = model.getWordAtPosition(position)
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word ? word.startColumn : position.column,
+            endColumn: word ? word.endColumn : position.column,
+          }
+
+          const suggestions = [
+            {
+              label: 'h1',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<h1>${1:Heading 1}</h1>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Heading 1',
+              range,
+            },
+            {
+              label: 'h2',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<h2>${1:Heading 2}</h2>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Heading 2',
+              range,
+            },
+            {
+              label: 'h3',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<h3>${1:Heading 3}</h3>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Heading 3',
+              range,
+            },
+            {
+              label: 'p',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<p>${1:Paragraph}</p>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Paragraph',
+              range,
+            },
+            {
+              label: 'div',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<div>${1}</div>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Div element',
+              range,
+            },
+            {
+              label: 'span',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<span>${1}</span>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Span element',
+              range,
+            },
+            {
+              label: 'ul',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<ul>\n  <li>${1}</li>\n</ul>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Unordered list',
+              range,
+            },
+            {
+              label: 'ol',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<ol>\n  <li>${1}</li>\n</ol>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Ordered list',
+              range,
+            },
+            {
+              label: 'li',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<li>${1}</li>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'List item',
+              range,
+            },
+            {
+              label: 'a',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<a href="${1}">${2:Link}</a>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Anchor link',
+              range,
+            },
+            {
+              label: 'img',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<img src="${1}" alt="${2}" />',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Image',
+              range,
+            },
+            {
+              label: 'button',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<button>${1:Click me}</button>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Button',
+              range,
+            },
+            {
+              label: 'form',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<form action="${1}" method="${2:post}">\n  ${3}\n</form>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Form',
+              range,
+            },
+            {
+              label: 'input',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<input type="${1:text}" name="${2}" />',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Input field',
+              range,
+            },
+            {
+              label: 'table',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<table>\n  <thead>\n    <tr>\n      <th>${1}</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>${2}</td>\n    </tr>\n  </tbody>\n</table>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'Table',
+              range,
+            },
+            {
+              label: 'html5',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${1:Document}</title>\n</head>\n<body>\n  ${2}\n</body>\n</html>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'HTML5 boilerplate',
+              range,
+            },
+          ]
+
+          console.log(`[CodeEditor] Returning ${suggestions.length} suggestions for ${lang}`)
+          return { suggestions }
+        },
+      })
+
+      console.log(`[CodeEditor] ✅ ${lang} snippets registered`)
     })
     
+    // Editor settings
     editor.updateOptions({
       fontSize: 14,
       fontFamily: "'Fira Code', 'Courier New', monospace",
@@ -269,25 +247,20 @@ export default function CodeEditor({
       insertSpaces: true,
       formatOnPaste: true,
       quickSuggestions: { other: true, comments: false, strings: false },
-      suggestOnTriggerCharacters: true,
       acceptSuggestionOnCommitCharacter: true,
       acceptSuggestionOnEnter: 'on',
       snippetSuggestions: 'top',
+      suggestOnTriggerCharacters: true,
       suggest: {
-        showKeywords: true, showSnippets: true, showWords: true,
-        showFunctions: true, showVariables: true,
+        showKeywords: true,
+        showSnippets: true,
+        showWords: true,
+        showFunctions: true,
+        showVariables: true,
       },
       parameterHints: { enabled: true },
       hover: { enabled: true, sticky: true },
       cursorBlinking: 'smooth',
-    })
-    
-    editor.addAction({
-      id: 'format-document',
-      label: 'Format Document',
-      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyI],
-      contextMenuGroupId: '1_modification',
-      run: (ed: any) => ed.getAction('editor.action.formatDocument')?.run(),
     })
   }
 
