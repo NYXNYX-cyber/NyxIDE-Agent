@@ -1,6 +1,6 @@
 import { RobotOutlined, UserOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { useState } from 'react'
-import { AIMessage } from '../stores/aiStore'
+import type { AIMessage } from '../stores/aiStore'
 
 interface ChatMessageProps {
   message: AIMessage
