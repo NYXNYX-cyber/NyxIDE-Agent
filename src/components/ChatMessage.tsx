@@ -24,19 +24,17 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     <div
       style={{
         display: 'flex',
-        gap: '12px',
-        padding: '12px',
-        backgroundColor: isUser ? '#f0f7ff' : '#ffffff',
-        borderRadius: '8px',
-        border: `1px solid ${isUser ? '#d0e7ff' : '#e5e7eb'}`,
-        marginBottom: '12px',
+        flexDirection: isUser ? 'row-reverse' : 'row',
+        gap: '10px',
+        marginBottom: '16px',
+        alignItems: 'flex-start',
       }}
     >
-      {/* Avatar */}
+      {/* Avatar - Right side for user, left side for AI */}
       <div
         style={{
-          width: '32px',
-          height: '32px',
+          width: '36px',
+          height: '36px',
           borderRadius: '50%',
           backgroundColor: isUser ? '#007acc' : '#10b981',
           display: 'flex',
@@ -46,42 +44,49 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         }}
       >
         {isUser ? (
-          <UserOutlined style={{ color: '#fff', fontSize: '16px' }} />
+          <UserOutlined style={{ color: '#fff', fontSize: '18px' }} />
         ) : (
-          <RobotOutlined style={{ color: '#fff', fontSize: '16px' }} />
+          <RobotOutlined style={{ color: '#fff', fontSize: '18px' }} />
         )}
       </div>
 
       {/* Message content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Header */}
+      <div
+        style={{
+          flex: 1,
+          maxWidth: 'calc(100% - 50px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: isUser ? 'flex-end' : 'flex-start',
+        }}
+      >
+        {/* Timestamp above bubble */}
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '8px',
+            fontSize: '11px',
+            color: '#999',
+            marginBottom: '4px',
+            padding: '0 4px',
           }}
         >
-          <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a1a1a' }}>
-            {isUser ? 'You' : 'NyxIDE Assistant'}
-          </span>
-          <span style={{ fontSize: '11px', color: '#888' }}>
-            {new Date(message.timestamp).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
+          {new Date(message.timestamp).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </div>
 
-        {/* Message text */}
+        {/* Message bubble */}
         <div
           style={{
-            fontSize: '13px',
-            lineHeight: '1.6',
-            color: '#1a1a1a',
+            backgroundColor: isUser ? '#007acc' : '#f3f4f6',
+            color: isUser ? '#fff' : '#1a1a1a',
+            padding: '12px 16px',
+            borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+            fontSize: '14px',
+            lineHeight: '1.5',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
+            maxWidth: '100%',
           }}
         >
           {message.content}
@@ -91,13 +96,45 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                 display: 'inline-block',
                 width: '8px',
                 height: '16px',
-                backgroundColor: '#007acc',
+                backgroundColor: isUser ? '#fff' : '#007acc',
                 marginLeft: '2px',
                 animation: 'blink 1s infinite',
               }}
             />
           )}
         </div>
+
+        {/* Actions below bubble */}
+        {!isUser && message.content && !message.isStreaming && (
+          <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                padding: '4px 10px',
+                fontSize: '11px',
+                backgroundColor: copied ? '#10b981' : 'transparent',
+                color: copied ? '#fff' : '#666',
+                border: copied ? 'none' : '1px solid #d1d5db',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.2s',
+              }}
+            >
+              {copied ? (
+                <>
+                  <CheckOutlined /> Copied!
+                </>
+              ) : (
+                <>
+                  <CopyOutlined /> Copy
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Reasoning/thinking process */}
         {message.reasoning && (
@@ -109,6 +146,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               backgroundColor: '#fafafa',
               padding: '8px',
               borderRadius: '6px',
+              width: '100%',
             }}
           >
             <summary style={{ cursor: 'pointer', fontWeight: 500 }}>
@@ -118,37 +156,6 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               {message.reasoning}
             </div>
           </details>
-        )}
-
-        {/* Copy button for assistant messages */}
-        {!isUser && message.content && !message.isStreaming && (
-          <button
-            onClick={handleCopy}
-            style={{
-              marginTop: '8px',
-              padding: '4px 8px',
-              fontSize: '11px',
-              backgroundColor: copied ? '#10b981' : '#f3f4f6',
-              color: copied ? '#fff' : '#666',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.2s',
-            }}
-          >
-            {copied ? (
-              <>
-                <CheckOutlined /> Copied!
-              </>
-            ) : (
-              <>
-                <CopyOutlined /> Copy
-              </>
-            )}
-          </button>
         )}
       </div>
 
