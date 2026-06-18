@@ -77,7 +77,7 @@ export default function CodeEditor({
     // Register snippets for all supported languages
     console.log('[CodeEditor] Registering snippets...')
     
-    const languages = ['html', 'php', 'javascript', 'typescript', 'python', 'css']
+    const languages = ['html', 'javascript', 'typescript', 'python', 'css']
     
     languages.forEach(lang => {
       const snippets = getSnippetsForLanguage(lang)
@@ -102,6 +102,7 @@ export default function CodeEditor({
               insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
               documentation: snippet.documentation,
               range,
+              filterText: snippet.label,
             }))
 
             console.log(`[CodeEditor] Returning ${suggestions.length} suggestions for ${lang}`)
@@ -112,6 +113,53 @@ export default function CodeEditor({
         console.log(`[CodeEditor] ✅ ${lang} snippets registered (${snippets.length} snippets)`)
       }
     })
+    
+    // Special case for PHP - show both PHP and HTML snippets
+    const phpSnippets = getSnippetsForLanguage('php')
+    const htmlSnippets = getSnippetsForLanguage('html')
+    
+    if (phpSnippets.length > 0 || htmlSnippets.length > 0) {
+      monaco.languages.registerCompletionItemProvider('php', {
+        provideCompletionItems: (model: any, position: any) => {
+          console.log(`[CodeEditor] provideCompletionItems called for php (combined)`)
+          
+          const word = model.getWordAtPosition(position)
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word ? word.startColumn : position.column,
+            endColumn: word ? word.endColumn : position.column,
+          }
+
+          // Combine PHP and HTML snippets
+          const combinedSuggestions = [
+            ...phpSnippets.map(snippet => ({
+              label: snippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: snippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: snippet.documentation,
+              range,
+              filterText: snippet.label,
+            })),
+            ...htmlSnippets.map(snippet => ({
+              label: snippet.label,
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: snippet.insertText,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: `(HTML) ${snippet.documentation}`,
+              range,
+              filterText: snippet.label,
+            })),
+          ]
+
+          console.log(`[CodeEditor] Returning ${combinedSuggestions.length} combined suggestions for php`)
+          return { suggestions: combinedSuggestions }
+        },
+      })
+
+      console.log(`[CodeEditor] ✅ php combined snippets registered (${phpSnippets.length + htmlSnippets.length} total)`)
+    }
     
     // Editor settings
     editor.updateOptions({
