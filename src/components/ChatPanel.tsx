@@ -261,8 +261,12 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
         .slice(0, -1) // Exclude the last placeholder message
         .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' }))
 
-      // Add current user message to context
-      contextMessages.push({ role: 'user', content })
+      // Add current user message with working directory context
+      const userMessageWithContext = currentFolder 
+        ? `[Working Directory: ${currentFolder}]\n\n${content}`
+        : content
+      
+      contextMessages.push({ role: 'user', content: userMessageWithContext })
 
       // Stream the response with tool definitions
       const result = await streamChatCompletion(
