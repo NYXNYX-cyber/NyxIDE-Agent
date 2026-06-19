@@ -9,7 +9,7 @@ export const AI_CONFIG = {
   // API Endpoint & Authentication (Development with Proxy)
   baseURL: '/api/v1',
   apiKey: 'sk-7c385384dc41adf3-8s0uu8-02500fae',
-  model: 'gc/gemini-3.1-pro-preview',
+  model: 'cx/gpt-5.5',
   
   // Request settings
   maxTokens: 4096,
