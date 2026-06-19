@@ -64,7 +64,7 @@ export const useAIStore = create<AIState>()(
       updateStreamingMessage: (id, content) => set((state) => ({
         messages: state.messages.map(msg =>
           msg.id === id
-            ? { ...msg, content, isStreaming: true }
+            ? { ...msg, content: msg.content + content, isStreaming: true }
             : msg
         ),
       })),
