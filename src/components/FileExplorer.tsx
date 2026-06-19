@@ -31,8 +31,8 @@ export default function FileExplorer({ onFileClick, onFolderChange }: FileExplor
       loadDirectory(rootPath).then(items => {
         setTreeData(items)
       })
-      // Notify parent about folder change (only when rootPath changes, not on refresh)
-      if (onFolderChange && refreshKey === 0) {
+      // Notify parent about folder change (always notify when rootPath changes)
+      if (onFolderChange) {
         onFolderChange(rootPath)
       }
     }

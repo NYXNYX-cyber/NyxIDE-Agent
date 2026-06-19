@@ -117,6 +117,11 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
     localStorage.setItem('nyxide-selected-model', selectedModel)
   }, [selectedModel])
 
+  // Debug: Log working directory
+  useEffect(() => {
+    console.log('[ChatPanel] Working directory:', currentFolder)
+  }, [currentFolder])
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
