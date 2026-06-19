@@ -107,6 +107,7 @@ export async function streamChatCompletion(
           // Finalize any pending tool call
           if (currentToolCall && currentToolCall.arguments) {
             try {
+              console.log('[AI Service] Attempting to parse tool call arguments:', currentToolCall.arguments)
               const args = JSON.parse(currentToolCall.arguments)
               toolCalls.push({
                 name: currentToolCall.name,
@@ -115,8 +116,11 @@ export async function streamChatCompletion(
               if (callbacks?.onToolCall) {
                 callbacks.onToolCall({ name: currentToolCall.name, arguments: args })
               }
+              console.log('[AI Service] Successfully parsed tool call:', currentToolCall.name)
             } catch (e) {
               console.error('[AI Service] Failed to parse tool call arguments:', e)
+              console.error('[AI Service] Raw arguments:', currentToolCall.arguments)
+              console.error('[AI Service] Arguments length:', currentToolCall.arguments.length)
             }
           }
           
@@ -155,6 +159,8 @@ export async function streamChatCompletion(
             // Handle tool calls delta
             const toolCallDelta = choice.delta?.tool_calls?.[0]
             if (toolCallDelta) {
+              console.log('[AI Service] Tool call delta:', JSON.stringify(toolCallDelta, null, 2))
+              
               if (toolCallDelta.index === 0 && toolCallDelta.id) {
                 // New tool call
                 currentToolCall = {
@@ -162,6 +168,7 @@ export async function streamChatCompletion(
                   name: toolCallDelta.function?.name || '',
                   arguments: toolCallDelta.function?.arguments || '',
                 }
+                console.log('[AI Service] New tool call:', currentToolCall)
               } else if (currentToolCall) {
                 // Append to existing tool call
                 if (toolCallDelta.function?.name) {
@@ -169,6 +176,7 @@ export async function streamChatCompletion(
                 }
                 if (toolCallDelta.function?.arguments) {
                   currentToolCall.arguments += toolCallDelta.function.arguments
+                  console.log('[AI Service] Accumulated tool call arguments:', currentToolCall.arguments)
                 }
               }
             }
