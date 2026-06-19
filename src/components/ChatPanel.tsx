@@ -297,11 +297,14 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
         }
       }
       
-      // If content is still empty or too short, add a helpful message
-      await new Promise(resolve => setTimeout(resolve, 100)) // Wait for streaming to complete
+      // Wait for streaming to complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Only show fallback if content is empty AND no tool calls
+      const hasToolCalls = result.toolCalls && result.toolCalls.length > 0
       const finalMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
-      if (finalMsg && finalMsg.content.trim() === '') {
-        console.warn('[ChatPanel] Empty response detected, adding fallback')
+      if (finalMsg && finalMsg.content.trim() === '' && !hasToolCalls) {
+        console.warn('[ChatPanel] Empty response detected without tool calls, adding fallback')
         updateStreamingMessage(assistantMessageId, '❌ AI tidak memberikan respons. Silakan coba lagi atau ubah model.')
       }
 
