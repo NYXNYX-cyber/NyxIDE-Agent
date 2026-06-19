@@ -10,7 +10,7 @@ import ChatPanel from './components/ChatPanel'
 
 // Internal App component that uses context
 function InternalApp() {
-  const { tabs, activeTabPath, openFile, updateFileContent, saveFile, closeFile } = useAppState()
+  const { tabs, activeTabPath, openFile, updateFileContent, saveFile, closeFile, refreshTab } = useAppState()
   const [chatOpen, setChatOpen] = useState(true)
   const [explorerOpen, setExplorerOpen] = useState(true)
   const [terminalOpen, setTerminalOpen] = useState(false)

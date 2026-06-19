@@ -134,6 +134,17 @@ export default function ChatPanel() {
         case 'writeFile': {
           const result = await writeFile.execute(args)
           finalizeStreamingMessage(loadingMessageId)
+          
+          // Refresh editor tab if file is open, and refresh file explorer tree
+          if (result.success) {
+            if ((window as any).nyxideRefreshTab) {
+              await (window as any).nyxideRefreshTab(result.path)
+            }
+            if ((window as any).fileExplorerRefresh) {
+              (window as any).fileExplorerRefresh()
+            }
+          }
+          
           if (result.success && result.needsApproval) {
             return `📝 **File Modified:** ${result.path}\nChanges ready to apply. Review diff below.`
           }
@@ -145,6 +156,12 @@ export default function ChatPanel() {
         case 'createFile': {
           const result = await createFile.execute(args)
           finalizeStreamingMessage(loadingMessageId)
+          
+          // Refresh file explorer tree to show new file
+          if (result.success && (window as any).fileExplorerRefresh) {
+            (window as any).fileExplorerRefresh()
+          }
+          
           return result.success 
             ? `✅ **File Created:** ${result.path} (${result.lineCount} lines)`
             : `❌ Error creating file: ${result.error}`
@@ -153,6 +170,12 @@ export default function ChatPanel() {
         case 'deleteFile': {
           const result = await deleteFile.execute(args)
           finalizeStreamingMessage(loadingMessageId)
+          
+          // Refresh file explorer tree to reflect deletion
+          if (result.success && (window as any).fileExplorerRefresh) {
+            (window as any).fileExplorerRefresh()
+          }
+          
           return result.success 
             ? `🗑️ **File Deleted:** ${result.path}`
             : `❌ Error deleting file: ${result.error}`

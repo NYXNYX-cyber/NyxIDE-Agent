@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 
 interface Tab {
   path: string
@@ -17,6 +17,7 @@ interface AppState {
   updateFileContent: (path: string, content: string) => void
   saveFile: (path: string) => Promise<boolean>
   isFileModified: (path: string) => boolean
+  refreshTab: (path: string) => Promise<void>
 }
 
 const AppContext = createContext<AppState | undefined>(undefined)
@@ -133,6 +134,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return tab?.modified || false
   }, [tabs])
 
+  const refreshTab = useCallback(async (path: string): Promise<void> => {
+    console.log('[AppContext] Refreshing tab from disk:', path)
+    const tab = tabs.find(t => t.path === path)
+    if (!tab) {
+      console.log('[AppContext] Tab not found, skipping refresh')
+      return
+    }
+
+    try {
+      const result = await (window as any).nyxide.readFile(path)
+      if (result.success) {
+        console.log('[AppContext] File content refreshed, updating tab')
+        setTabs(prev => prev.map(t => {
+          if (t.path === path) {
+            return { 
+              ...t, 
+              content: result.content, 
+              originalContent: result.content,
+              modified: false 
+            }
+          }
+          return t
+        }))
+      } else {
+        console.error('[AppContext] Failed to refresh tab:', result.error)
+      }
+    } catch (error) {
+      console.error('[AppContext] Error refreshing tab:', error)
+    }
+  }, [tabs])
+
+  // Expose refreshTab to window for chat panel to use
+  useEffect(() => {
+    Object.assign(window, { nyxideRefreshTab: refreshTab })
+    return () => {
+      delete (window as any).nyxideRefreshTab
+    }
+  }, [refreshTab])
+
   return (
     <AppContext.Provider value={{
       tabs,
@@ -143,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateFileContent,
       saveFile,
       isFileModified,
+      refreshTab,
     }}>
       {children}
     </AppContext.Provider>
