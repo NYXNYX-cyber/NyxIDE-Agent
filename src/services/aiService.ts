@@ -42,8 +42,6 @@ export async function streamChatCompletion(
   callbacks?: StreamCallbacks
 ): Promise<{ content: string; toolCalls: any[] }> {
   try {
-    console.log('[AI Service] Starting stream chat completion...')
-    
     const requestBody: any = {
       model: AI_CONFIG.model,
       messages: [
