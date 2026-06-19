@@ -181,6 +181,15 @@ export default function ChatPanel() {
       content: '',
       isStreaming: true,
     })
+    
+    console.log('[ChatPanel] Created assistant message with ID:', assistantMessageId)
+    
+    // Wait for state to update (zustand async)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    
+    // Verify message exists in store
+    const messageExists = useAIStore.getState().messages.some(m => m.id === assistantMessageId)
+    console.log('[ChatPanel] Message exists in store:', messageExists)
 
     setStreaming(true)
 
@@ -202,6 +211,8 @@ export default function ChatPanel() {
         FILE_TOOLS, // Pass tools to AI
         // On chunk callback
         (chunk) => {
+          console.log('[ChatPanel] Chunk received:', chunk)
+          console.log('[ChatPanel] Updating message ID:', assistantMessageId)
           updateStreamingMessage(assistantMessageId, chunk)
         },
         // On error callback
@@ -210,6 +221,9 @@ export default function ChatPanel() {
           setError(err.message)
         }
       )
+      
+      console.log('[ChatPanel] Stream result:', result)
+      console.log('[ChatPanel] Current messages after stream:', useAIStore.getState().messages)
 
       // Handle tool calls if any
       if (result.toolCalls && result.toolCalls.length > 0) {

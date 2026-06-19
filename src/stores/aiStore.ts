@@ -61,13 +61,27 @@ export const useAIStore = create<AIState>()(
         return newMessage.id // Return the generated ID
       },
       
-      updateStreamingMessage: (id, content) => set((state) => ({
-        messages: state.messages.map(msg =>
-          msg.id === id
-            ? { ...msg, content: msg.content + content, isStreaming: true }
-            : msg
-        ),
-      })),
+      updateStreamingMessage: (id, content) => {
+        console.log('[aiStore] updateStreamingMessage:')
+        console.log('  - Target ID:', id)
+        console.log('  - Content:', content)
+        const currentState = get()
+        const matchingMsg = currentState.messages.find(m => m.id === id)
+        if (!matchingMsg) {
+          console.warn('[aiStore] Message with ID not found!', id)
+          return // Exit early if message not found
+        }
+        
+        console.log('  - Found message:', matchingMsg.id)
+        
+        set((state) => ({
+          messages: state.messages.map(msg =>
+            msg.id === id
+              ? { ...msg, content: msg.content + content, isStreaming: true }
+              : msg
+          ),
+        }))
+      },
       
       finalizeStreamingMessage: (id) => set((state) => ({
         messages: state.messages.map(msg =>
