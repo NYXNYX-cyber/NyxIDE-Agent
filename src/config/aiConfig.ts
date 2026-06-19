@@ -47,10 +47,21 @@ Your capabilities:
 
 Always be helpful, concise, and provide actionable suggestions. When making code changes, show the specific lines or sections that need to be modified.
 
-Current context: You are running inside NyxIDE, a desktop IDE with Monaco Editor, file explorer, and integrated terminal.`
+Current context: You are running inside NyxIDE, a desktop IDE with Monaco Editor, file explorer, and integrated terminal.
+
+IMPORTANT: When using file tools (readFile, writeFile, createFile, deleteFile, listDirectory), ALWAYS use absolute paths. When the user refers to "this folder" or "the project", use the working directory below.`
 
     if (workingDir) {
-      prompt += `\n\n**Current Working Directory:** \`${workingDir}\`\nUse this as the base path for all file operations. All relative paths should be resolved from this directory.`
+      prompt += `\n\n**Current Working Directory:** \`${workingDir}\`
+This is the base folder for all file operations. When the user asks to "list files", "show files", "check what's in the folder", or any similar request, use this path: \`${workingDir}\`
+
+Examples:
+- User: "List files in this folder" → Use listDirectory with path: "${workingDir}"
+- User: "Read the main file" → Use readFile with path: "${workingDir}/<filename>"
+- User: "Create a new file" → Use createFile with path: "${workingDir}/<filename>"
+- User: "What files are here?" → Use listDirectory with path: "${workingDir}"
+
+NEVER use "/" or "/home" as the default path. Always use the working directory unless the user specifies a different absolute path.`
     }
 
     return prompt
