@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RobotOutlined, ClearOutlined } from '@ant-design/icons'
 import { streamChatCompletion, type ChatMessage as AIMessage } from '../services/aiService'
 import { useAIStore } from '../stores/aiStore'
