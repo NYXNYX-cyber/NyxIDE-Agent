@@ -292,8 +292,17 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
       if (result.content && result.content.length > 0) {
         const currentMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
         if (currentMsg && currentMsg.content === '') {
+          console.log('[ChatPanel] Fallback: updating message from result.content')
           updateStreamingMessage(assistantMessageId, result.content)
         }
+      }
+      
+      // If content is still empty or too short, add a helpful message
+      await new Promise(resolve => setTimeout(resolve, 100)) // Wait for streaming to complete
+      const finalMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
+      if (finalMsg && finalMsg.content.trim() === '') {
+        console.warn('[ChatPanel] Empty response detected, adding fallback')
+        updateStreamingMessage(assistantMessageId, '❌ AI tidak memberikan respons. Silakan coba lagi atau ubah model.')
       }
 
       // Handle tool calls if any

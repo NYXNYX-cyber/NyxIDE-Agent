@@ -19,7 +19,7 @@ export const AI_CONFIG = {
   model: 'cx/gpt-5.5', // Default model
   
   // Request settings
-  maxTokens: 4096,
+  maxTokens: 8192, // Increased from 4096 for more detailed responses
   temperature: 0.7,
   topP: 0.95,
   
