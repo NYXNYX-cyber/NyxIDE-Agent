@@ -312,38 +312,63 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
       if (result.toolCalls && result.toolCalls.length > 0) {
         console.log('[ChatPanel] Tool calls detected:', result.toolCalls)
         
+        const toolResults: string[] = []
+        let hasErrors = false
+        
         for (const toolCall of result.toolCalls) {
-          setPendingToolCall(toolCall)
+          setPendingToolCall({ name: `${toolCall.name}...`, args: toolCall.arguments })
           
-          // Show user-friendly tool call info (not full JSON)
-          let displayMessage = `🔧 **Executing:** \`${toolCall.name}\``
+          // Show only the operation, not full details upfront
+          const action = toolCall.name === 'readFile' ? '📖 Reading' :
+                         toolCall.name === 'writeFile' ? '✏️ Writing' :
+                         toolCall.name === 'createFile' ? '✨ Creating' :
+                         toolCall.name === 'deleteFile' ? '🗑️ Deleting' :
+                         toolCall.name === 'listDirectory' ? '📁 Listing' : '⚙️ Processing'
           
-          // Add context-specific info
-          if (toolCall.name === 'writeFile' && toolCall.arguments.path) {
-            displayMessage += `\n\n📝 Modifying: \`${toolCall.arguments.path}\``
-          } else if (toolCall.name === 'readFile' && toolCall.arguments.path) {
-            displayMessage += `\n\n📖 Reading: \`${toolCall.arguments.path}\``
-          } else if (toolCall.name === 'createFile' && toolCall.arguments.path) {
-            displayMessage += `\n\n✨ Creating: \`${toolCall.arguments.path}\``
-          } else if (toolCall.name === 'deleteFile' && toolCall.arguments.path) {
-            displayMessage += `\n\n🗑️ Deleting: \`${toolCall.arguments.path}\``
-          }
-          
+          const targetPath = (toolCall.arguments as any).path || 'unknown'
           addMessage({
             role: 'assistant',
-            content: displayMessage,
+            content: `**${action}:** ${targetPath.split('/').pop()}`
           })
 
           // Execute the tool
           const toolResult = await executeTool(toolCall.name, toolCall.arguments)
+          toolResults.push(toolResult)
           
-          // Show result to user
+          // Check if operation succeeded or failed
+          if (toolResult.includes('❌') || toolResult.includes('Error')) {
+            hasErrors = true
+          }
+          
+          // Show detailed result
           addMessage({
             role: 'assistant',
             content: toolResult,
           })
-
-          setPendingToolCall(null)
+        }
+        
+        // After all tool calls complete, show completion summary
+        if (toolResults.length > 0) {
+          const successCount = toolResults.filter(r => !r.includes('❌')).length
+          const totalTasks = toolResults.length
+          
+          let completionMessage = ''
+          if (hasErrors) {
+            completionMessage = `\n\n⚠️ **Task Selesai:** ${successCount}/${totalTasks} berhasil, beberapa ada error`
+          } else {
+            completionMessage = `\n\n✅ **Task Selesai!** Semua ${totalTasks} operasi berhasil dikerjakan.`
+          }
+          
+          addMessage({
+            role: 'assistant',
+            content: completionMessage,
+          })
+          
+          // Auto-refresh UI after task completion
+          await new Promise(resolve => setTimeout(resolve, 300))
+          if ((window as any).fileExplorerRefresh) {
+            (window as any).fileExplorerRefresh()
+          }
         }
       }
 
