@@ -266,9 +266,9 @@ function InternalApp() {
             ×
           </button>
           
-          {chatOpen && (
+              {chatOpen && (
             <div style={{ height: '100%', overflow: 'hidden' }}>
-              <ChatPanel />
+              <ChatPanel currentFolder={currentFolder} />
             </div>
           )}
         </div>

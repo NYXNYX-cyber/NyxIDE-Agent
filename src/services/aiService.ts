@@ -28,24 +28,34 @@ interface StreamCallbacks {
   onError?: (error: Error) => void
 }
 
+interface StreamOptions {
+  model?: string
+  workingDir?: string
+}
+
 /**
  * Stream text completion from AI using native fetch with tool calling support
  * 
  * @param messages - Array of chat messages
  * @param tools - Optional array of tools for function calling
  * @param callbacks - Callbacks for streaming chunks, tool calls, and errors
+ * @param options - Optional settings (model override, working directory)
  * @returns Promise with full response and any tool calls
  */
 export async function streamChatCompletion(
   messages: ChatMessage[],
   tools?: Tool[],
-  callbacks?: StreamCallbacks
+  callbacks?: StreamCallbacks,
+  options?: StreamOptions
 ): Promise<{ content: string; toolCalls: any[] }> {
   try {
+    const selectedModel = options?.model || AI_CONFIG.model
+    const systemPrompt = AI_CONFIG.getSystemPrompt(options?.workingDir)
+    
     const requestBody: any = {
-      model: AI_CONFIG.model,
+      model: selectedModel,
       messages: [
-        { role: 'system', content: AI_CONFIG.systemPrompt },
+        { role: 'system', content: systemPrompt },
         ...messages,
       ],
       max_tokens: AI_CONFIG.maxTokens,

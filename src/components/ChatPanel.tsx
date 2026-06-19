@@ -6,6 +6,7 @@ import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import { type Tool } from '../types/tool'
 import { readFile, writeFile, createFile, deleteFile, listDirectory } from '../tools/fileTools'
+import { AVAILABLE_MODELS } from '../config/aiConfig'
 
 // Define file tools schema for AI
 const FILE_TOOLS: Tool[] = [
@@ -83,7 +84,11 @@ const FILE_TOOLS: Tool[] = [
   },
 ]
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  currentFolder?: string
+}
+
+export default function ChatPanel({ currentFolder }: ChatPanelProps) {
   const {
     messages,
     isLoading,
@@ -101,6 +106,16 @@ export default function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [pendingToolCall, setPendingToolCall] = useState<{ name: string; args: any } | null>(null)
   const isToolExecutingRef = useRef(false)
+  
+  // Model selection with localStorage persistence
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem('nyxide-selected-model') || 'cx/gpt-5.5'
+  })
+
+  // Save selected model to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('nyxide-selected-model', selectedModel)
+  }, [selectedModel])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -256,6 +271,11 @@ export default function ChatPanel() {
         (err) => {
           console.error('[ChatPanel] Stream error:', err)
           setError(err.message)
+        },
+        // Stream options: model and working directory
+        {
+          model: selectedModel,
+          workingDir: currentFolder,
         }
       )
       
@@ -345,37 +365,75 @@ export default function ChatPanel() {
           borderBottom: '1px solid #e5e7eb',
           backgroundColor: '#f8f9fa',
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
           gap: '8px',
           paddingRight: '40px', // Space for close button
         }}
       >
-        <RobotOutlined style={{ color: '#007acc', fontSize: '20px' }} />
-        <span style={{ fontWeight: 600, fontSize: '14px', color: '#1a1a1a' }}>
-          NyxIDE Assistant
-        </span>
-        <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#888' }}>
-          {isStreaming ? '🔴 Streaming...' : messages.length > 0 ? `${messages.length} messages` : 'AI Ready'}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <RobotOutlined style={{ color: '#007acc', fontSize: '20px' }} />
+          <span style={{ fontWeight: 600, fontSize: '14px', color: '#1a1a1a' }}>
+            NyxIDE Assistant
+          </span>
+          <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#888' }}>
+            {isStreaming ? '🔴 Streaming...' : messages.length > 0 ? `${messages.length} messages` : 'AI Ready'}
+          </span>
 
-        {messages.length > 0 && (
-          <button
-            onClick={handleClearChat}
+          {messages.length > 0 && (
+            <button
+              onClick={handleClearChat}
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                backgroundColor: '#f3f4f6',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              title="Clear chat"
+            >
+              <ClearOutlined /> Clear
+            </button>
+          )}
+        </div>
+
+        {/* Model Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>
+            Model:
+          </label>
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            disabled={isStreaming}
             style={{
+              flex: 1,
               padding: '4px 8px',
               fontSize: '11px',
-              backgroundColor: '#f3f4f6',
+              backgroundColor: isStreaming ? '#f3f4f6' : '#fff',
               border: '1px solid #d1d5db',
               borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
+              cursor: isStreaming ? 'not-allowed' : 'pointer',
+              color: '#1a1a1a',
             }}
-            title="Clear chat"
+            title={AVAILABLE_MODELS.find(m => m.id === selectedModel)?.description || 'Select AI model'}
           >
-            <ClearOutlined /> Clear
-          </button>
+            {AVAILABLE_MODELS.map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Working Directory Indicator */}
+        {currentFolder && (
+          <div style={{ fontSize: '10px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            📁 {currentFolder}
+          </div>
         )}
       </div>
 
