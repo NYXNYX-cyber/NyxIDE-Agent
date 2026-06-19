@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('nyxide', {
   searchFiles: (dir, pattern) => ipcRenderer.invoke('search-files', dir, pattern),
   createDirectory: (path) => ipcRenderer.invoke('create-directory', path),
   deleteFile: (path) => ipcRenderer.invoke('delete-file', path),
+  createFile: (path, content = '') => ipcRenderer.invoke('write-file', path, content),
   
   // Command execution (legacy)
   execCommand: (command, options) => ipcRenderer.invoke('exec-command', command, options),

@@ -1,9 +1,86 @@
-import { useEffect, useRef } from 'react'
-import { RobotOutlined, ClearOutlined } from '@ant-design/icons'
-import { streamChatCompletion } from '../services/aiService'
+import { useEffect, useRef, useState } from 'react'
+import { RobotOutlined, ClearOutlined, FileTextOutlined } from '@ant-design/icons'
+import { streamChatCompletion, type ChatMessage } from '../services/aiService'
 import { useAIStore } from '../stores/aiStore'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
+import { type Tool } from '../types/tool'
+
+// Define file tools schema for AI
+const FILE_TOOLS: Tool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'readFile',
+      description: 'Read the content of a file at the specified path.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Absolute file path to read' },
+        },
+        required: ['path'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'writeFile',
+      description: 'Write new content to an existing file with diff preview.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Absolute file path to write to' },
+          content: { type: 'string', description: 'New content to write' },
+        },
+        required: ['path', 'content'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'createFile',
+      description: 'Create a new file at the specified path with optional initial content.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Absolute file path to create' },
+          content: { type: 'string', description: 'Initial content (optional)' },
+        },
+        required: ['path'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'deleteFile',
+      description: 'Delete a file at the specified path. This action cannot be undone.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Absolute file path to delete' },
+        },
+        required: ['path'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'listDirectory',
+      description: 'List all files and folders in a directory.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'Absolute directory path to list' },
+        },
+        required: ['path'],
+      },
+    },
+  },
+]
 
 export default function ChatPanel() {
   const {
@@ -21,6 +98,7 @@ export default function ChatPanel() {
   } = useAIStore()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [pendingToolCall, setPendingToolCall] = useState<{ name: string; args: any } | null>(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -34,6 +112,7 @@ export default function ChatPanel() {
     // Prepare for AI response
     setLoading(true)
     setError(null)
+    setPendingToolCall(null)
 
     // Add placeholder assistant message for streaming and get its ID
     const assistantMessageId = addMessage({
@@ -51,24 +130,43 @@ export default function ChatPanel() {
       const currentMessages = useAIStore.getState().messages
       const contextMessages = currentMessages
         .slice(0, -1) // Exclude the last placeholder message
-        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' }))
 
       // Add current user message to context
       contextMessages.push({ role: 'user', content })
 
-      // Stream the response
-      await streamChatCompletion(
-        contextMessages,
+      // Stream the response with tool definitions
+      const result = await streamChatCompletion(
+        contextMessages as ChatMessage[],
+        FILE_TOOLS, // Pass tools to AI
         // On chunk callback
         (chunk) => {
           updateStreamingMessage(assistantMessageId, chunk)
         },
         // On error callback
-        (error) => {
-          console.error('[ChatPanel] Stream error:', error)
-          setError(error.message)
+        (err) => {
+          console.error('[ChatPanel] Stream error:', err)
+          setError(err.message)
         }
       )
+
+      // Handle tool calls if any
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        console.log('[ChatPanel] Tool calls detected:', result.toolCalls)
+        
+        for (const toolCall of result.toolCalls) {
+          setPendingToolCall(toolCall)
+          
+          // Show tool call message to user
+          addMessage({
+            role: 'assistant',
+            content: `🔧 AI wants to execute: ${toolCall.name}\n\nArguments:\n${JSON.stringify(toolCall.arguments, null, 2)}\n\nPlease review the changes before applying them.`,
+          })
+
+          // TODO: Execute tool and show approval modal
+          // For now, just show info and continue
+        }
+      }
 
       // Finalize streaming
       finalizeStreamingMessage(assistantMessageId)
@@ -91,6 +189,26 @@ export default function ChatPanel() {
     if (window.confirm('Clear all chat messages?')) {
       clearMessages()
     }
+  }
+
+  // Render tool call info below message if pending
+  const renderToolCallInfo = () => {
+    if (!pendingToolCall) return null
+    
+    return (
+      <div style={{ padding: '12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <FileTextOutlined style={{ color: '#856404' }} />
+          <strong>Tool Call Detected:</strong> <code>{pendingToolCall.name}</code>
+        </div>
+        <div style={{ fontSize: '13px', whiteSpace: 'pre-wrap', color: '#856404' }}>
+          Arguments: {JSON.stringify(pendingToolCall.args, null, 2)}
+        </div>
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#856404' }}>
+          ⚠️ Future feature: Approval dialog will appear here to confirm actions before executing
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -164,7 +282,7 @@ export default function ChatPanel() {
             }}
           >
             <p>Start a conversation with me!</p>
-            <p>I'll help you with:</p>
+            <p>I can help you with:</p>
             <ul
               style={{
                 listStyle: 'none',
@@ -173,16 +291,21 @@ export default function ChatPanel() {
                 textAlign: 'left',
               }}
             >
-              <li>📝 Reading and editing files</li>
-              <li>🔍 Searching your codebase</li>
-              <li>💻 Executing bash commands</li>
-              <li>🛠️ Managing project structure</li>
+              <li>📝 Read and edit files</li>
+              <li>🔍 Create new files</li>
+              <li>🗑️ Delete files</li>
+              <li>📁 Browse directories</li>
             </ul>
           </div>
         )}
 
         {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
+          <div key={msg.id}>
+            <ChatMessage key={msg.id} message={msg} />
+            
+            {/* Show tool call info for assistant messages */}
+            {msg.role === 'assistant' && msg.content?.includes('🔧 AI wants to execute') && renderToolCallInfo()}
+          </div>
         ))}
 
         {isLoading && !isStreaming && (

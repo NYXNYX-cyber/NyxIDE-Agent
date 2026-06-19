@@ -1,5 +1,5 @@
 /**
- * AI Service - Simple fetch-based API client with streaming support
+ * AI Service - Simple fetch-based API client with streaming and tool calling support
  * 
  * Uses native fetch API for maximum compatibility with Electron + Vite
  */
@@ -8,41 +8,66 @@ import { AI_CONFIG } from '../config/aiConfig'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
-  content: string
+  content: string | null
+  tool_calls?: any[]
+  tool_call_id?: string
+}
+
+interface Tool {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: any
+  }
+}
+
+interface StreamCallbacks {
+  onChunk?: (chunk: string) => void
+  onToolCall?: (toolCall: { name: string; arguments: any }) => void
+  onError?: (error: Error) => void
 }
 
 /**
- * Stream text completion from AI using native fetch
+ * Stream text completion from AI using native fetch with tool calling support
  * 
  * @param messages - Array of chat messages
- * @param onChunk - Callback for each streamed chunk
- * @param onError - Callback for errors
- * @returns Promise with full response
+ * @param tools - Optional array of tools for function calling
+ * @param callbacks - Callbacks for streaming chunks, tool calls, and errors
+ * @returns Promise with full response and any tool calls
  */
 export async function streamChatCompletion(
   messages: ChatMessage[],
-  onChunk?: (chunk: string) => void,
-  onError?: (error: Error) => void
-): Promise<string> {
+  tools?: Tool[],
+  callbacks?: StreamCallbacks
+): Promise<{ content: string; toolCalls: any[] }> {
   try {
     console.log('[AI Service] Starting stream chat completion...')
     
+    const requestBody: any = {
+      model: AI_CONFIG.model,
+      messages: [
+        { role: 'system', content: AI_CONFIG.systemPrompt },
+        ...messages,
+      ],
+      max_tokens: AI_CONFIG.maxTokens,
+      temperature: AI_CONFIG.temperature,
+      stream: true,
+    }
+
+    // Add tools if provided
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools
+      requestBody.tool_choice = 'auto'
+    }
+
     const response = await fetch(`${AI_CONFIG.baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
       },
-      body: JSON.stringify({
-        model: AI_CONFIG.model,
-        messages: [
-          { role: 'system', content: AI_CONFIG.systemPrompt },
-          ...messages,
-        ],
-        max_tokens: AI_CONFIG.maxTokens,
-        temperature: AI_CONFIG.temperature,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {
@@ -57,6 +82,8 @@ export async function streamChatCompletion(
     const decoder = new TextDecoder()
     let fullResponse = ''
     let buffer = ''
+    const toolCalls: any[] = []
+    let currentToolCall: any = null
 
     while (true) {
       const { done, value } = await reader.read()
@@ -77,20 +104,61 @@ export async function streamChatCompletion(
         
         // Skip [DONE] message
         if (trimmed === 'data: [DONE]') {
-          console.log('[AI Service] Stream completed, total length:', fullResponse.length)
-          return fullResponse
+          // Finalize any pending tool call
+          if (currentToolCall && currentToolCall.arguments) {
+            try {
+              const args = JSON.parse(currentToolCall.arguments)
+              toolCalls.push({
+                name: currentToolCall.name,
+                arguments: args,
+              })
+              if (callbacks?.onToolCall) {
+                callbacks.onToolCall({ name: currentToolCall.name, arguments: args })
+              }
+            } catch (e) {
+              console.error('[AI Service] Failed to parse tool call arguments:', e)
+            }
+          }
+          
+          console.log('[AI Service] Stream completed, total length:', fullResponse.length, 'tool calls:', toolCalls.length)
+          return { content: fullResponse, toolCalls }
         }
         
         // Parse SSE data
         if (trimmed.startsWith('data: ')) {
           try {
             const json = JSON.parse(trimmed.slice(6))
-            const content = json.choices?.[0]?.delta?.content || ''
+            const choice = json.choices?.[0]
             
+            if (!choice) continue
+
+            // Handle content delta
+            const content = choice.delta?.content || ''
             if (content) {
               fullResponse += content
-              if (onChunk) {
-                onChunk(content)
+              if (callbacks?.onChunk) {
+                callbacks.onChunk(content)
+              }
+            }
+
+            // Handle tool calls delta
+            const toolCallDelta = choice.delta?.tool_calls?.[0]
+            if (toolCallDelta) {
+              if (toolCallDelta.index === 0 && toolCallDelta.id) {
+                // New tool call
+                currentToolCall = {
+                  id: toolCallDelta.id,
+                  name: toolCallDelta.function?.name || '',
+                  arguments: toolCallDelta.function?.arguments || '',
+                }
+              } else if (currentToolCall) {
+                // Append to existing tool call
+                if (toolCallDelta.function?.name) {
+                  currentToolCall.name += toolCallDelta.function.name
+                }
+                if (toolCallDelta.function?.arguments) {
+                  currentToolCall.arguments += toolCallDelta.function.arguments
+                }
               }
             }
           } catch (e) {
@@ -101,12 +169,28 @@ export async function streamChatCompletion(
       }
     }
 
-    console.log('[AI Service] Stream completed, total length:', fullResponse.length)
-    return fullResponse
+    // Handle case where stream ends without [DONE]
+    if (currentToolCall && currentToolCall.arguments) {
+      try {
+        const args = JSON.parse(currentToolCall.arguments)
+        toolCalls.push({
+          name: currentToolCall.name,
+          arguments: args,
+        })
+        if (callbacks?.onToolCall) {
+          callbacks.onToolCall({ name: currentToolCall.name, arguments: args })
+        }
+      } catch (e) {
+        console.error('[AI Service] Failed to parse tool call arguments:', e)
+      }
+    }
+
+    console.log('[AI Service] Stream completed, total length:', fullResponse.length, 'tool calls:', toolCalls.length)
+    return { content: fullResponse, toolCalls }
   } catch (error) {
     console.error('[AI Service] Error in stream chat completion:', error)
-    if (onError && error instanceof Error) {
-      onError(error)
+    if (callbacks?.onError && error instanceof Error) {
+      callbacks.onError(error)
     }
     throw error
   }
