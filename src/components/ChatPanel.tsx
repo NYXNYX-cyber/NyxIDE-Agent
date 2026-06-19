@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { RobotOutlined, ClearOutlined } from '@ant-design/icons'
-import { streamChatCompletion, type ChatMessage } from '../services/aiService'
+import { streamChatCompletion, type ChatMessage as AIMessage } from '../services/aiService'
 import { useAIStore } from '../stores/aiStore'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
@@ -198,7 +198,7 @@ export default function ChatPanel() {
 
       // Stream the response with tool definitions
       const result = await streamChatCompletion(
-        contextMessages as ChatMessage[],
+        contextMessages as AIMessage[],
         FILE_TOOLS, // Pass tools to AI
         // On chunk callback
         (chunk) => {
