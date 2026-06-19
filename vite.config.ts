@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to avoid CORS issues
       '/api': {
-        target: 'http://192.168.1.10:20128',
+        target: 'http://157.245.196.165:20128',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
