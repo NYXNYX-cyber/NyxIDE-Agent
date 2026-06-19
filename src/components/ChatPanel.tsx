@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
-import { RobotOutlined, ClearOutlined, FileTextOutlined } from '@ant-design/icons'
+import { useEffect, useRef } from 'react'
+import { RobotOutlined, ClearOutlined } from '@ant-design/icons'
 import { streamChatCompletion, type ChatMessage } from '../services/aiService'
 import { useAIStore } from '../stores/aiStore'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import { type Tool } from '../types/tool'
+import { readFile, writeFile, createFile, deleteFile, listDirectory } from '../tools/fileTools'
 
 // Define file tools schema for AI
 const FILE_TOOLS: Tool[] = [
@@ -105,6 +106,66 @@ export default function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Execute tool function based on tool name
+  const executeTool = async (toolName: string, args: any): Promise<string> => {
+    console.log('[ChatPanel] Executing tool:', toolName, args)
+    
+    try {
+      switch (toolName) {
+        case 'readFile': {
+          const result = await readFile.execute(args)
+          return result.success 
+            ? `📄 **File Content:** ${result.path}\n\`\`\`\n${result.content}\n\`\`\`\n(${result.lineCount} lines)`
+            : `❌ Error reading file: ${result.error}`
+        }
+        
+        case 'writeFile': {
+          const result = await writeFile.execute(args)
+          if (result.success && result.needsApproval) {
+            return `📝 **File Modified:** ${result.path}\nChanges ready to apply. Review diff below.`
+          }
+          return result.success 
+            ? `✅ File written successfully: ${result.path}`
+            : `❌ Error writing file: ${result.error}`
+        }
+        
+        case 'createFile': {
+          const result = await createFile.execute(args)
+          return result.success 
+            ? `✅ **File Created:** ${result.path} (${result.lineCount} lines)`
+            : `❌ Error creating file: ${result.error}`
+        }
+        
+        case 'deleteFile': {
+          const result = await deleteFile.execute(args)
+          return result.success 
+            ? `🗑️ **File Deleted:** ${result.path}`
+            : `❌ Error deleting file: ${result.error}`
+        }
+        
+        case 'listDirectory': {
+          const result = await listDirectory.execute(args)
+          if (!result.success) return `❌ Error listing directory: ${result.error}`
+          
+          const items = result.items || []
+          if (items.length === 0) return `📁 **Empty directory:** ${result.path}`
+          
+          const list = items.map((item: any) => 
+            item.isDirectory ? `📁 ${item.name}/` : `📄 ${item.name}`
+          ).join('\n')
+          
+          return `📁 **Directory:** ${result.path}\n${list}\n\n(${result.count} items)`
+        }
+        
+        default:
+          return `⚠️ Unknown tool: ${toolName}`
+      }
+    } catch (error: any) {
+      console.error('[ChatPanel] Tool execution error:', error)
+      return `❌ Error executing ${toolName}: ${error.message}`
+    }
+  }
+
   const handleSendMessage = async (content: string) => {
     // Add user message
     addMessage({ role: 'user', content })
@@ -157,14 +218,22 @@ export default function ChatPanel() {
         for (const toolCall of result.toolCalls) {
           setPendingToolCall(toolCall)
           
-          // Show tool call message to user
+          // Show tool call info to user
           addMessage({
             role: 'assistant',
-            content: `🔧 AI wants to execute: ${toolCall.name}\n\nArguments:\n${JSON.stringify(toolCall.arguments, null, 2)}\n\nPlease review the changes before applying them.`,
+            content: `🔧 **Executing:** \`${toolCall.name}\`\n\nArguments:\n\`\`\`json\n${JSON.stringify(toolCall.arguments, null, 2)}\n\`\`\``,
           })
 
-          // TODO: Execute tool and show approval modal
-          // For now, just show info and continue
+          // Execute the tool
+          const toolResult = await executeTool(toolCall.name, toolCall.arguments)
+          
+          // Show result to user
+          addMessage({
+            role: 'assistant',
+            content: toolResult,
+          })
+
+          setPendingToolCall(null)
         }
       }
 
@@ -189,26 +258,6 @@ export default function ChatPanel() {
     if (window.confirm('Clear all chat messages?')) {
       clearMessages()
     }
-  }
-
-  // Render tool call info below message if pending
-  const renderToolCallInfo = () => {
-    if (!pendingToolCall) return null
-    
-    return (
-      <div style={{ padding: '12px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '6px', marginTop: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <FileTextOutlined style={{ color: '#856404' }} />
-          <strong>Tool Call Detected:</strong> <code>{pendingToolCall.name}</code>
-        </div>
-        <div style={{ fontSize: '13px', whiteSpace: 'pre-wrap', color: '#856404' }}>
-          Arguments: {JSON.stringify(pendingToolCall.args, null, 2)}
-        </div>
-        <div style={{ marginTop: '8px', fontSize: '12px', color: '#856404' }}>
-          ⚠️ Future feature: Approval dialog will appear here to confirm actions before executing
-        </div>
-      </div>
-    )
   }
 
   return (
