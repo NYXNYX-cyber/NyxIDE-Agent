@@ -224,6 +224,15 @@ export default function ChatPanel() {
       
       console.log('[ChatPanel] Stream result:', result)
       console.log('[ChatPanel] Current messages after stream:', useAIStore.getState().messages)
+      
+      // If streaming didn't update via chunks, update directly from result
+      if (result.content && result.content.length > 0) {
+        const currentMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
+        if (currentMsg && currentMsg.content === '') {
+          console.log('[ChatPanel] Updating message directly from result content')
+          updateStreamingMessage(assistantMessageId, result.content)
+        }
+      }
 
       // Handle tool calls if any
       if (result.toolCalls && result.toolCalls.length > 0) {

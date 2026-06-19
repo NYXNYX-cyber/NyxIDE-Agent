@@ -128,17 +128,28 @@ export async function streamChatCompletion(
         if (trimmed.startsWith('data: ')) {
           try {
             const json = JSON.parse(trimmed.slice(6))
+            
+            console.log('[AI Service] Parsed JSON:', json)
+            
             const choice = json.choices?.[0]
             
-            if (!choice) continue
+            if (!choice) {
+              console.log('[AI Service] No choice in this chunk')
+              continue
+            }
 
             // Handle content delta
             const content = choice.delta?.content || ''
+            console.log('[AI Service] Content delta:', JSON.stringify(content))
+            
             if (content) {
               fullResponse += content
               if (callbacks?.onChunk) {
+                console.log('[AI Service] Calling onChunk with content:', content)
                 callbacks.onChunk(content)
               }
+            } else {
+              console.log('[AI Service] No content in this choice')
             }
 
             // Handle tool calls delta
