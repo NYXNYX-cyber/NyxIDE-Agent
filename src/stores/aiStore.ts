@@ -13,11 +13,16 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 
 export interface AIMessage {
   id: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
+  role: 'user' | 'assistant' | 'system' | 'tool'
+  name?: string
+  content: string | null
   timestamp: number
-  reasoning?: string
-  isStreaming?: boolean
+  model?: string
+  tokens?: number
+  tool_calls?: any[]
+  tool_call_id?: string
+  toolExecutionStatus?: 'pending' | 'running' | 'completed' | 'failed' | 'rejected'
+  toolOutput?: string
 }
 
 interface AIState {

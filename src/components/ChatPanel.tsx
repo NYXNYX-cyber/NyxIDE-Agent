@@ -607,51 +607,24 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
           <div 
             key={msg.id}
             style={{
-              padding: '12px',
-              border: '2px solid #000',
-              boxShadow: '4px 4px 0 #000',
-              backgroundColor: msg.role === 'user' ? '#fff' : msg.role === 'tool' ? '#fafafa' : '#f5f5f5',
-              transform: msg.role === 'user' ? 'translate(-2px, -2px)' : 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
             }}
           >
-            {/* Header */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '8px',
-              fontSize: '11px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              color: '#666',
-              borderBottom: '1px solid #eee',
-              paddingBottom: '4px'
-            }}>
-              <span>{msg.role === 'user' ? 'YOU' : msg.role === 'tool' ? 'SYSTEM' : 'NYXIDE ASSISTANT'}</span>
-              <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
-            </div>
-
-            {/* Body */}
-            {msg.role === 'tool' && (
-              <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#555', fontStyle: 'italic' }}>
-                ⚙️ Tool execution completed. Result sent to assistant.
-              </div>
-            )}
-
-            {msg.role !== 'tool' && msg.content && (
-              <div style={{ wordBreak: 'break-word', fontSize: '13px' }}>
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
-              </div>
-            )}
+            <ChatMessage message={msg} />
 
             {/* Tool Calls Rendering */}
             {msg.tool_calls && msg.tool_calls.length > 0 && (
               <div style={{
-                marginTop: '12px',
+                marginLeft: '44px',
+                marginRight: '12px',
                 padding: '12px',
                 border: '2px solid #000',
                 backgroundColor: '#fff',
                 fontFamily: 'Courier New, monospace',
+                boxShadow: '4px 4px 0 #000',
+                marginBottom: '16px'
               }}>
                 <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>⚙️</span>
