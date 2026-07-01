@@ -604,11 +604,160 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         )}
 
         {messages.map((msg) => (
-          <div key={msg.id}>
-            <ChatMessage key={msg.id} message={msg} />
-            
-            {/* Show tool call info for assistant messages */}
-            {msg.role === 'assistant' && msg.content?.includes('🔧 AI wants to execute') && renderToolCallInfo()}
+          <div 
+            key={msg.id}
+            style={{
+              padding: '12px',
+              border: '2px solid #000',
+              boxShadow: '4px 4px 0 #000',
+              backgroundColor: msg.role === 'user' ? '#fff' : msg.role === 'tool' ? '#fafafa' : '#f5f5f5',
+              transform: msg.role === 'user' ? 'translate(-2px, -2px)' : 'none',
+            }}
+          >
+            {/* Header */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              marginBottom: '8px',
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              color: '#666',
+              borderBottom: '1px solid #eee',
+              paddingBottom: '4px'
+            }}>
+              <span>{msg.role === 'user' ? 'YOU' : msg.role === 'tool' ? 'SYSTEM' : 'NYXIDE ASSISTANT'}</span>
+              <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
+            </div>
+
+            {/* Body */}
+            {msg.role === 'tool' && (
+              <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#555', fontStyle: 'italic' }}>
+                ⚙️ Tool execution completed. Result sent to assistant.
+              </div>
+            )}
+
+            {msg.role !== 'tool' && msg.content && (
+              <div style={{ wordBreak: 'break-word', fontSize: '13px' }}>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
+            )}
+
+            {/* Tool Calls Rendering */}
+            {msg.tool_calls && msg.tool_calls.length > 0 && (
+              <div style={{
+                marginTop: '12px',
+                padding: '12px',
+                border: '2px solid #000',
+                backgroundColor: '#fff',
+                fontFamily: 'Courier New, monospace',
+              }}>
+                <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>⚙️</span>
+                  <span>Terminal Action Required</span>
+                </div>
+                {msg.tool_calls.map((tc, idx) => {
+                  let cmd = '';
+                  try {
+                    const args = typeof tc.function.arguments === 'string'
+                      ? JSON.parse(tc.function.arguments)
+                      : tc.function.arguments;
+                    cmd = args.command || '';
+                  } catch (e) {
+                    cmd = tc.function.arguments || '';
+                  }
+                  
+                  return (
+                    <div key={idx}>
+                      <div style={{
+                        backgroundColor: '#1e1e1e',
+                        color: '#a9ff68',
+                        padding: '8px',
+                        fontSize: '12px',
+                        borderRadius: '2px',
+                        overflowX: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                        marginBottom: '10px',
+                        border: '1px solid #000'
+                      }}>
+                        $ {cmd}
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                          Status:{' '}
+                          <span style={{ 
+                            color: 
+                              msg.toolExecutionStatus === 'pending' ? '#d8a000' :
+                              msg.toolExecutionStatus === 'running' ? '#0066cc' :
+                              msg.toolExecutionStatus === 'completed' ? '#00aa00' :
+                              msg.toolExecutionStatus === 'failed' ? '#cc0000' : '#888'
+                          }}>
+                            {(msg.toolExecutionStatus || 'pending').toUpperCase()}
+                          </span>
+                        </div>
+                        
+                        {msg.toolExecutionStatus === 'pending' && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => handleCancelTool(msg.id)}
+                              style={{
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                backgroundColor: '#ffcccc',
+                                color: '#000',
+                                border: '2px solid #000',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✕ Cancel
+                            </button>
+                            <button
+                              onClick={() => handleRunTool(msg.id)}
+                              style={{
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                backgroundColor: '#ccffcc',
+                                color: '#000',
+                                border: '2px solid #000',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✓ Run Command
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {msg.toolOutput && (
+                        <details style={{ marginTop: '10px' }}>
+                          <summary style={{ fontSize: '11px', cursor: 'pointer', userSelect: 'none', color: '#666' }}>
+                            Show command output
+                          </summary>
+                          <pre style={{
+                            marginTop: '6px',
+                            padding: '8px',
+                            backgroundColor: '#f5f5f5',
+                            border: '1px solid #ccc',
+                            fontSize: '11px',
+                            maxHeight: '150px',
+                            overflowY: 'auto',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all'
+                          }}>
+                            {msg.toolOutput}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
 

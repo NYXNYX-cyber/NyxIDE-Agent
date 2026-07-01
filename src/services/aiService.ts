@@ -8,10 +8,13 @@
 import { AI_CONFIG } from '../config/aiConfig'
 
 interface ChatMessage {
-  role: 'user' | 'assistant' | 'system'
+  role: 'user' | 'assistant' | 'system' | 'tool'
+  name?: string
   content: string | null
   tool_calls?: any[]
   tool_call_id?: string
+  toolExecutionStatus?: 'pending' | 'running' | 'completed' | 'failed' | 'rejected'
+  toolOutput?: string
 }
 
 interface Tool {
@@ -25,7 +28,7 @@ interface Tool {
 
 interface StreamCallbacks {
   onChunk?: (chunk: string) => void
-  onToolCall?: (toolCall: { name: string; arguments: any }) => void
+  onToolCall?: (toolCall: { id?: string; name: string; arguments: any }) => void
   onError?: (error: Error) => void
 }
 
@@ -57,9 +60,9 @@ async function processSSEStream(
         if (toolCall.arguments) {
           try {
             const args = JSON.parse(toolCall.arguments)
-            toolCalls.push({ name: toolCall.name, arguments: args })
+            toolCalls.push({ id: toolCall.id, name: toolCall.name, arguments: args })
             if (callbacks?.onToolCall) {
-              callbacks.onToolCall({ name: toolCall.name, arguments: args })
+              callbacks.onToolCall({ id: toolCall.id, name: toolCall.name, arguments: args })
             }
           } catch (e) {
             console.error(`[AI Service] Failed to parse tool call ${index}:`, e)
