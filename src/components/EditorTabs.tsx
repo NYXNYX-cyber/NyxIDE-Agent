@@ -11,13 +11,13 @@ export default function EditorTabs() {
 
   return (
     <div style={{
-      height: '36px',
-      backgroundColor: '#252526',
+      height: '40px',
+      backgroundColor: '#fff',
       display: 'flex',
-      alignItems: 'flex-end',
+      alignItems: 'stretch',
       overflowX: 'auto',
       overflowY: 'hidden',
-      borderBottom: '1px solid #3c3c3c',
+      borderBottom: '3px solid #000',
     }}>
       {/* Tabs */}
       {tabs.map((tab) => {
@@ -27,31 +27,33 @@ export default function EditorTabs() {
             key={tab.path}
             onClick={() => setActiveTab(tab.path)}
             style={{
-              padding: '8px 12px',
-              backgroundColor: isActive ? '#1e1e1e' : '#2d2d2d',
-              borderRight: '1px solid #3c3c3c',
+              padding: '8px 14px',
+              backgroundColor: isActive ? '#000' : '#fff',
+              color: isActive ? '#fff' : '#000',
+              borderRight: '2px solid #000',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              fontSize: '13px',
+              fontSize: '12px',
+              fontWeight: 700,
               minWidth: '120px',
               maxWidth: '200px',
               userSelect: 'none',
-              borderBottom: isActive ? '2px solid #007acc' : '2px solid transparent',
+              transition: 'all 0.1s ease',
             }}
             onMouseEnter={(e) => {
               if (!isActive) {
-                e.currentTarget.style.backgroundColor = '#2a2d2e'
+                e.currentTarget.style.backgroundColor = '#f5f5f5'
               }
             }}
             onMouseLeave={(e) => {
               if (!isActive) {
-                e.currentTarget.style.backgroundColor = '#2d2d2d'
+                e.currentTarget.style.backgroundColor = '#fff'
               }
             }}
           >
-            <span style={{ color: tab.modified ? '#fff' : '#888' }}>
+            <span style={{ fontWeight: 900, fontSize: '14px' }}>
               {tab.modified ? '●' : '○'}
             </span>
             <span style={{ 
@@ -59,7 +61,8 @@ export default function EditorTabs() {
               overflow: 'hidden', 
               textOverflow: 'ellipsis', 
               whiteSpace: 'nowrap',
-              color: isActive ? '#fff' : '#888',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             }}>
               {tab.name}
             </span>
@@ -68,23 +71,22 @@ export default function EditorTabs() {
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#888',
+                color: isActive ? '#fff' : '#000',
                 cursor: 'pointer',
-                padding: '2px',
+                padding: '2px 4px',
                 display: 'flex',
                 alignItems: 'center',
-                borderRadius: '3px',
+                fontWeight: 900,
+                fontSize: '14px',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#fff'
-                e.currentTarget.style.backgroundColor = '#3c3c3c'
+                e.currentTarget.style.color = '#ff0000'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#888'
-                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = isActive ? '#fff' : '#000'
               }}
             >
-              <CloseOutlined style={{ fontSize: '10px' }} />
+              ✕
             </button>
           </div>
         )
@@ -93,13 +95,17 @@ export default function EditorTabs() {
       {/* Empty state */}
       {tabs.length === 0 && (
         <div style={{ 
-          padding: '8px 12px', 
-          color: '#666', 
-          fontSize: '12px',
+          padding: '8px 14px', 
+          color: '#000', 
+          fontSize: '11px',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
           display: 'flex',
           alignItems: 'center',
+          backgroundColor: '#f5f5f5',
         }}>
-          No files open • Click a file in the Explorer to open it
+          ○ No files open • Click a file in the Explorer to open
         </div>
       )}
     </div>

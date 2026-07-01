@@ -407,37 +407,53 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
       {/* Header */}
       <div
         style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid #e5e7eb',
-          backgroundColor: '#f8f9fa',
+          padding: '16px',
+          borderBottom: '3px solid #000',
+          backgroundColor: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px',
-          paddingRight: '40px', // Space for close button
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <RobotOutlined style={{ color: '#007acc', fontSize: '20px' }} />
-          <span style={{ fontWeight: 600, fontSize: '14px', color: '#1a1a1a' }}>
-            NyxIDE Assistant
-          </span>
-          <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#888' }}>
-            {isStreaming ? '🔴 Streaming...' : messages.length > 0 ? `${messages.length} messages` : 'AI Ready'}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              backgroundColor: '#000',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '20px',
+              fontWeight: 900,
+              border: '3px solid #000',
+            }}
+          >
+            N
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: '16px', color: '#000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              NyxIDE Assistant
+            </div>
+            <div style={{ fontSize: '10px', color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>
+              {isStreaming ? '● STREAMING...' : isLoading ? '● LOADING...' : messages.length > 0 ? `${messages.length} MESSAGES` : '○ READY'}
+            </div>
+          </div>
 
           {messages.length > 0 && (
             <button
               onClick={handleClearChat}
+              className="brutalist-button"
               style={{
-                padding: '4px 8px',
+                padding: '8px 12px',
                 fontSize: '11px',
-                backgroundColor: '#f3f4f6',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
+                backgroundColor: '#fff',
+                color: '#000',
+                border: '2px solid #000',
+                fontWeight: 700,
+                textTransform: 'uppercase',
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
               }}
               title="Clear chat"
             >
@@ -448,22 +464,23 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
 
         {/* Model Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>
+          <label style={{ fontSize: '11px', color: '#000', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
             Model:
           </label>
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
             disabled={isStreaming}
+            className="brutalist-input"
             style={{
               flex: 1,
-              padding: '4px 8px',
-              fontSize: '11px',
-              backgroundColor: isStreaming ? '#f3f4f6' : '#fff',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              fontWeight: 600,
+              backgroundColor: isStreaming ? '#f5f5f5' : '#fff',
+              border: '2px solid #000',
               cursor: isStreaming ? 'not-allowed' : 'pointer',
-              color: '#1a1a1a',
+              color: '#000',
             }}
             title={AVAILABLE_MODELS.find(m => m.id === selectedModel)?.description || 'Select AI model'}
           >
@@ -477,8 +494,28 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
 
         {/* Working Directory Indicator */}
         {currentFolder && (
-          <div style={{ fontSize: '10px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            📁 {currentFolder}
+          <div
+            style={{
+              padding: '6px 10px',
+              fontSize: '10px',
+              color: '#000',
+              backgroundColor: '#f5f5f5',
+              border: '2px solid #000',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <span>📁</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentFolder}
+            </span>
           </div>
         )}
       </div>
@@ -491,33 +528,44 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
           padding: '16px',
           display: 'flex',
           flexDirection: 'column',
+          gap: '12px',
+          backgroundColor: '#f5f5f5',
         }}
       >
         {messages.length === 0 && !isLoading && (
           <div
             style={{
               textAlign: 'center',
-              color: '#888',
+              color: '#000',
               marginTop: 'auto',
               marginBottom: 'auto',
-              fontSize: '13px',
+              padding: '24px',
+              border: '3px dashed #000',
+              backgroundColor: '#fff',
             }}
           >
-            <p>Start a conversation with me!</p>
-            <p>I can help you with:</p>
-            <ul
+            <p style={{ fontWeight: 800, fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+              Start a conversation!
+            </p>
+            <p style={{ fontSize: '12px', fontWeight: 600, marginBottom: '12px' }}>
+              I can help you with:
+            </p>
+            <div
               style={{
-                listStyle: 'none',
-                padding: 0,
-                marginTop: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
                 textAlign: 'left',
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
               }}
             >
-              <li>📝 Read and edit files</li>
-              <li>🔍 Create new files</li>
-              <li>🗑️ Delete files</li>
-              <li>📁 Browse directories</li>
-            </ul>
+              <div style={{ padding: '6px 10px', border: '2px solid #000', backgroundColor: '#fff' }}>📝 Read & edit files</div>
+              <div style={{ padding: '6px 10px', border: '2px solid #000', backgroundColor: '#fff' }}>✨ Create new files</div>
+              <div style={{ padding: '6px 10px', border: '2px solid #000', backgroundColor: '#fff' }}>🗑️ Delete files</div>
+              <div style={{ padding: '6px 10px', border: '2px solid #000', backgroundColor: '#fff' }}>📁 Browse directories</div>
+            </div>
           </div>
         )}
 
@@ -535,19 +583,25 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              color: '#888',
-              fontSize: '13px',
-              padding: '12px',
+              gap: '10px',
+              padding: '12px 16px',
+              backgroundColor: '#000',
+              color: '#fff',
+              border: '3px solid #000',
+              boxShadow: '4px 4px 0 #000',
+              fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              alignSelf: 'flex-start',
             }}
           >
             <div
               style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid #ddd',
-                borderTop: '2px solid #007acc',
-                borderRadius: '50%',
+                width: '16px',
+                height: '16px',
+                border: '2px solid #fff',
+                borderTop: '2px solid #000',
                 animation: 'spin 1s linear infinite',
               }}
             />
@@ -558,13 +612,15 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
         {error && (
           <div
             style={{
-              padding: '12px',
-              backgroundColor: '#fee',
-              border: '1px solid #fcc',
-              borderRadius: '6px',
-              color: '#c33',
-              fontSize: '13px',
-              marginTop: '8px',
+              padding: '12px 16px',
+              backgroundColor: '#000',
+              border: '3px solid #000',
+              boxShadow: '4px 4px 0 #000',
+              color: '#fff',
+              fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             }}
           >
             ⚠️ {error}

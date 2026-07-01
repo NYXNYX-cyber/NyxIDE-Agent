@@ -15,9 +15,10 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to avoid CORS issues
       '/api': {
-        target: 'http://157.245.196.165:20128',
+        target: 'https://slip-live-managed-python.trycloudflare.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: true,
       },
     },
   },

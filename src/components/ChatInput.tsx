@@ -50,8 +50,8 @@ export default function ChatInput({
       onSubmit={handleSubmit}
       style={{
         padding: '16px',
-        borderTop: '1px solid #e5e7eb',
-        backgroundColor: '#f8f9fa',
+        borderTop: '3px solid #000',
+        backgroundColor: '#fff',
       }}
     >
       <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
@@ -60,22 +60,34 @@ export default function ChatInput({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask me anything..."
+          placeholder="ASK ME ANYTHING..."
           disabled={disabled}
           rows={1}
           style={{
             flex: 1,
             padding: '12px 14px',
-            border: '1px solid #d1d5db',
-            borderRadius: '6px',
-            fontSize: '14px',
+            border: '3px solid #000',
+            boxShadow: disabled ? 'none' : '4px 4px 0 #000',
+            fontSize: '13px',
+            fontWeight: 600,
             lineHeight: '1.5',
             outline: 'none',
-            backgroundColor: disabled ? '#f3f4f6' : '#fff',
+            backgroundColor: disabled ? '#f5f5f5' : '#fff',
             resize: 'none',
             fontFamily: 'inherit',
-            minHeight: '40px',
-            maxHeight: '100px',
+            minHeight: '44px',
+            maxHeight: '120px',
+            color: '#000',
+            transition: 'all 0.15s ease',
+            borderRadius: 0,
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.transform = 'translate(-2px, -2px)'
+            e.currentTarget.style.boxShadow = '6px 6px 0 #000'
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.transform = ''
+            e.currentTarget.style.boxShadow = '4px 4px 0 #000'
           }}
         />
 
@@ -83,17 +95,42 @@ export default function ChatInput({
           type="submit"
           disabled={!inputValue.trim() || disabled}
           style={{
-            width: '38px',
-            height: '40px',
+            width: '52px',
+            height: '44px',
             padding: '0',
-            backgroundColor: !inputValue.trim() || disabled ? '#d1d5db' : '#007acc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
+            backgroundColor: !inputValue.trim() || disabled ? '#f5f5f5' : '#000',
+            color: !inputValue.trim() || disabled ? '#999' : '#fff',
+            border: '3px solid #000',
+            boxShadow: !inputValue.trim() || disabled ? 'none' : '4px 4px 0 #000',
             cursor: !inputValue.trim() || disabled ? 'not-allowed' : 'pointer',
-            fontSize: '16px',
-            transition: 'all 0.2s',
-            opacity: 0.9,
+            fontSize: '18px',
+            fontWeight: 900,
+            transition: 'all 0.15s ease',
+            borderRadius: 0,
+          }}
+          onMouseEnter={(e) => {
+            if (!(!inputValue.trim() || disabled)) {
+              e.currentTarget.style.transform = 'translate(2px, 2px)'
+              e.currentTarget.style.boxShadow = '2px 2px 0 #000'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!(!inputValue.trim() || disabled)) {
+              e.currentTarget.style.transform = ''
+              e.currentTarget.style.boxShadow = '4px 4px 0 #000'
+            }
+          }}
+          onMouseDown={(e) => {
+            if (!(!inputValue.trim() || disabled)) {
+              e.currentTarget.style.transform = 'translate(4px, 4px)'
+              e.currentTarget.style.boxShadow = '0px 0px 0 #000'
+            }
+          }}
+          onMouseUp={(e) => {
+            if (!(!inputValue.trim() || disabled)) {
+              e.currentTarget.style.transform = ''
+              e.currentTarget.style.boxShadow = '4px 4px 0 #000'
+            }
           }}
         >
           <SendOutlined />

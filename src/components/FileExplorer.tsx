@@ -154,21 +154,24 @@ export default function FileExplorer({ onFileClick, onFolderChange }: FileExplor
               }
             }}
             style={{
-              padding: '4px 8px',
+              padding: '6px 8px',
               paddingLeft: `${8 + depth * 16}px`,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: isSelected ? '#094771' : 'transparent',
-              color: '#fff',
-              fontSize: '13px',
+              backgroundColor: isSelected ? '#000' : 'transparent',
+              color: isSelected ? '#fff' : '#000',
+              fontSize: '12px',
+              fontWeight: 600,
               userSelect: 'none',
-              borderLeft: isSelected ? '2px solid #007acc' : '2px solid transparent',
+              borderLeft: isSelected ? '4px solid #000' : '4px solid transparent',
+              borderBottom: '1px solid #f5f5f5',
+              transition: 'all 0.1s ease',
             }}
             onMouseEnter={(e) => {
               if (!isSelected) {
-                e.currentTarget.style.backgroundColor = '#2a2d2e'
+                e.currentTarget.style.backgroundColor = '#f5f5f5'
               }
             }}
             onMouseLeave={(e) => {
@@ -180,18 +183,20 @@ export default function FileExplorer({ onFileClick, onFolderChange }: FileExplor
             {/* Expand/Collapse arrow for directories */}
             {node.isDirectory && (
               <span style={{ 
-                width: '16px', 
+                width: '14px', 
                 textAlign: 'center',
-                transition: 'transform 0.2s',
+                transition: 'transform 0.15s',
                 transform: node.isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                fontWeight: 900,
+                color: '#000',
               }}>
                 {node.isLoading ? '⏳' : '▶'}
               </span>
             )}
-            {!node.isDirectory && <span style={{ width: '16px' }} />}
+            {!node.isDirectory && <span style={{ width: '14px' }} />}
             
             {/* Icon */}
-            <span>{getFileIcon(node.name, node.isDirectory)}</span>
+            <span style={{ fontSize: '14px' }}>{getFileIcon(node.name, node.isDirectory)}</span>
             
             {/* Name */}
             <span style={{ 
@@ -216,55 +221,73 @@ export default function FileExplorer({ onFileClick, onFolderChange }: FileExplor
   }
 
   return (
-    <div style={{ height: '100%', backgroundColor: '#252526', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
       {/* Header with Open Folder button */}
       <div style={{ 
-        padding: '8px 12px', 
-        borderBottom: '1px solid #3c3c3c', 
-        backgroundColor: '#252526',
+        padding: '12px 16px', 
+        borderBottom: '3px solid #000', 
+        backgroundColor: '#000',
+        color: '#fff',
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
       }}>
-        <strong style={{ color: '#fff', fontSize: '12px', flex: 1 }}>EXPLORER</strong>
+        <strong style={{ color: '#fff', fontSize: '12px', flex: 1, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>
+          Explorer
+        </strong>
         <button
           onClick={handleOpenFolder}
+          className="brutalist-button"
           style={{
-            padding: '4px 8px',
-            backgroundColor: '#0e639c',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '3px',
-            cursor: 'pointer',
+            padding: '6px 10px',
+            backgroundColor: '#fff',
+            color: '#000',
+            border: '2px solid #fff',
+            boxShadow: '2px 2px 0 #000',
             fontSize: '11px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
+            letterSpacing: '0.5px',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1177bb')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0e639c')}
         >
           <FolderOpenOutlined />
-          Open Folder
+          Open
         </button>
       </div>
       
       {/* Tree view */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
         {!rootPath ? (
-          <div style={{ padding: '16px', textAlign: 'center', color: '#888', fontSize: '12px' }}>
-            <p>No folder opened</p>
-            <p style={{ marginTop: '8px' }}>Click "Open Folder" to start</p>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#000', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ 
+              padding: '20px', 
+              border: '3px dashed #000', 
+              backgroundColor: '#f5f5f5',
+              fontSize: '11px',
+              fontWeight: 700,
+            }}>
+              📁 No folder
+              <div style={{ marginTop: '8px', fontSize: '10px', color: '#666', textTransform: 'none' }}>
+                Click "OPEN" to start
+              </div>
+            </div>
           </div>
         ) : (
           <>
             {/* Root path display */}
             <div style={{
-              padding: '4px 8px',
-              color: '#fff',
-              fontSize: '12px',
-              backgroundColor: '#37373d',
-              fontWeight: 600,
+              padding: '10px 16px',
+              color: '#000',
+              fontSize: '11px',
+              backgroundColor: '#f5f5f5',
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              borderBottom: '2px solid #000',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',

@@ -232,15 +232,15 @@ function InternalApp() {
       <EditorTabs />
       
       {/* Main Content Area - Split Layout */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', backgroundColor: '#fff' }}>
         {/* Left Panel - Chat Interface (20%) */}
         <div 
           style={{ 
-            width: chatOpen ? '20%' : '0px',
-            minWidth: chatOpen ? '200px' : '0px',
-            maxWidth: chatOpen ? '350px' : '0px',
-            transition: 'all 0.3s ease',
-            borderRight: chatOpen ? '1px solid #3c3c3c' : 'none',
+            width: chatOpen ? '22%' : '0px',
+            minWidth: chatOpen ? '240px' : '0px',
+            maxWidth: chatOpen ? '380px' : '0px',
+            transition: 'all 0.2s ease',
+            borderRight: chatOpen ? '3px solid #000' : 'none',
             backgroundColor: '#ffffff',
             position: 'relative',
             overflow: 'hidden',
@@ -250,23 +250,36 @@ function InternalApp() {
             onClick={() => setChatOpen(false)}
             style={{
               position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: '#e0e0e0',
-              border: 'none',
-              borderRadius: '4px',
+              top: '10px',
+              right: '10px',
+              background: '#fff',
+              border: '2px solid #000',
+              boxShadow: '2px 2px 0 #000',
               padding: '4px 8px',
               cursor: 'pointer',
-              fontSize: '16px',
+              fontSize: '14px',
+              fontWeight: 900,
+              color: '#000',
               zIndex: 10,
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translate(1px, 1px)'
+              e.currentTarget.style.boxShadow = '1px 1px 0 #000'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = ''
+              e.currentTarget.style.boxShadow = '2px 2px 0 #000'
+            }}
           >
-            ×
+            ✕
           </button>
           
-              {chatOpen && (
+          {chatOpen && (
             <div style={{ height: '100%', overflow: 'hidden' }}>
               <ChatPanel currentFolder={currentFolder} />
             </div>
@@ -278,34 +291,33 @@ function InternalApp() {
           <button
             onClick={() => setChatOpen(true)}
             style={{
-              width: '24px',
+              width: '32px',
               height: '100%',
-              background: '#2a2d2e',
+              background: '#000',
               border: 'none',
+              borderRight: '3px solid #000',
               color: '#fff',
               cursor: 'pointer',
               fontSize: '18px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderTop: '1px solid #3c3c3c',
-              borderBottom: '1px solid #3c3c3c',
-              opacity: 0.7,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#333333')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#000')}
             title="Toggle Chat"
           >
-            ⌨️
+            💬
           </button>
         )}
 
         {/* Center Panel - Monaco Editor (Main) */}
         <div style={{ 
           flex: 1, 
-          backgroundColor: '#1e1e1e',
+          backgroundColor: '#ffffff',
           display: 'flex',
           overflow: 'hidden',
+          borderRight: '3px solid #000',
         }}>
           {activeTab ? (
             <CodeEditor
@@ -338,27 +350,48 @@ function InternalApp() {
         </div>
         
         {/* Right Panel - File Explorer (280px) */}
-        <div style={{ width: explorerOpen ? '280px' : '0', minWidth: explorerOpen ? '280px' : '0px', maxWidth: explorerOpen ? '400px' : '0px', borderLeft: explorerOpen ? '1px solid #3c3c3c' : 'none', overflow: 'hidden', backgroundColor: '#252526', position: 'relative', transition: 'all 0.3s ease' }}>
+        <div style={{ 
+          width: explorerOpen ? '300px' : '0', 
+          minWidth: explorerOpen ? '300px' : '0px', 
+          maxWidth: explorerOpen ? '400px' : '0px', 
+          borderLeft: explorerOpen ? '3px solid #000' : 'none', 
+          overflow: 'hidden', 
+          backgroundColor: '#fff', 
+          position: 'relative', 
+          transition: 'all 0.2s ease' 
+        }}>
           {explorerOpen && (
             <button
               onClick={() => setExplorerOpen(false)}
               style={{
                 position: 'absolute',
-                top: '36px',
-                right: '8px',
-                background: '#e0e0e0',
-                border: 'none',
-                borderRadius: '4px',
+                top: '10px',
+                right: '10px',
+                background: '#fff',
+                border: '2px solid #000',
+                boxShadow: '2px 2px 0 #000',
                 padding: '4px 8px',
                 cursor: 'pointer',
-                fontSize: '16px',
+                fontSize: '14px',
+                fontWeight: 900,
+                color: '#000',
                 zIndex: 10,
-                color: '#333',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translate(1px, 1px)'
+                e.currentTarget.style.boxShadow = '1px 1px 0 #000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = ''
+                e.currentTarget.style.boxShadow = '2px 2px 0 #000'
+              }}
             >
-              ×
+              ✕
             </button>
           )}
           
@@ -370,22 +403,20 @@ function InternalApp() {
           <button
             onClick={() => setExplorerOpen(true)}
             style={{
-              width: '24px',
+              width: '32px',
               height: '100%',
-              background: '#2a2d2e',
+              background: '#000',
               border: 'none',
+              borderLeft: '3px solid #000',
               color: '#fff',
               cursor: 'pointer',
               fontSize: '18px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderTop: '1px solid #3c3c3c',
-              borderBottom: '1px solid #3c3c3c',
-              opacity: 0.7,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#333333')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#000')}
             title="Toggle Explorer"
           >
             📁
@@ -396,12 +427,12 @@ function InternalApp() {
         {/* Terminal Panel */}
       <div 
         style={{ 
-          height: terminalOpen ? '250px' : '0px',
+          height: terminalOpen ? '280px' : '0px',
           minHeight: terminalOpen ? '150px' : '0px',
           maxHeight: terminalOpen ? '400px' : '0px',
-          transition: 'all 0.3s ease',
-          borderTop: terminalOpen ? '1px solid #3c3c3c' : 'none',
-          backgroundColor: '#1e1e1e',
+          transition: 'all 0.2s ease',
+          borderTop: terminalOpen ? '3px solid #000' : 'none',
+          backgroundColor: '#000',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -411,23 +442,25 @@ function InternalApp() {
             onClick={() => setTerminalOpen(true)}
             style={{
               width: '100%',
-              height: '30px',
-              background: '#2a2d2e',
+              height: '32px',
+              background: '#000',
               border: 'none',
               color: '#fff',
               cursor: 'pointer',
               fontSize: '12px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              opacity: 0.7,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#333333')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#000')}
             title="Toggle Terminal"
           >
-            ⌨️ Terminal
+            ▶ Show Terminal
           </button>
         )}
         
@@ -439,19 +472,18 @@ function InternalApp() {
                 position: 'absolute',
                 top: '8px',
                 right: '8px',
-                background: '#e0e0e0',
-                border: 'none',
-                borderRadius: '4px',
+                background: '#fff',
+                border: '2px solid #fff',
+                boxShadow: '2px 2px 0 #000',
                 padding: '4px 8px',
                 cursor: 'pointer',
-                fontSize: '16px',
+                fontSize: '12px',
+                fontWeight: 900,
+                color: '#000',
                 zIndex: 10,
-                color: '#333',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#d0d0d0'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#e0e0e0'}
             >
-              ×
+              ✕
             </button>
             
             <Terminal visible={terminalOpen} cwd={currentFolder || undefined} />
@@ -459,30 +491,43 @@ function InternalApp() {
         )}
       </div>
       
-      {/* Status Bar */}
+      {/* Status Bar - Neo Brutalism */}
       <div style={{ 
-        height: '24px', 
-        backgroundColor: '#007acc', 
-        color: 'white',
+        height: '28px', 
+        backgroundColor: '#000', 
+        color: '#fff',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 12px',
+        padding: '0 16px',
         fontSize: '11px',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '1px',
         userSelect: 'none',
         gap: '16px',
+        borderTop: '2px solid #000',
       }}>
-        <span>{tabs.length} files open</span>
+        <span style={{ fontWeight: 900 }}>● {tabs.length} FILES</span>
         {activeTab && (
           <>
-            <span>{activeTab.name}</span>
+            <span style={{ opacity: 0.7 }}>│</span>
+            <span>{activeTab.name.toUpperCase()}</span>
+            <span style={{ opacity: 0.7 }}>│</span>
             <span>{activeLanguage?.toUpperCase()}</span>
-            {activeTab.modified && <span>Modified</span>}
+            {activeTab.modified && (
+              <>
+                <span style={{ opacity: 0.7 }}>│</span>
+                <span style={{ color: '#fff', fontWeight: 900 }}>● MODIFIED</span>
+              </>
+            )}
+            <span style={{ opacity: 0.7 }}>│</span>
             <span>UTF-8</span>
+            <span style={{ opacity: 0.7 }}>│</span>
             <span>LF</span>
           </>
         )}
         <div style={{ flex: 1 }} />
-        <span>NyxIDE v0.1.0</span>
+        <span style={{ fontWeight: 900 }}>NYXIDE v0.1.0</span>
       </div>
       
       {/* New File Modal */}

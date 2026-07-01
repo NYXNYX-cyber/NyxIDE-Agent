@@ -6,20 +6,20 @@
  */
 
 export const AVAILABLE_MODELS = [
-  { id: 'cx/gpt-5.5', name: 'GPT-5.5', description: 'Fast and capable (default)' },
-  { id: 'gc/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', description: 'Google latest (may have limits)' },
-  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', description: 'Advanced reasoning' },
-  { id: 'openai/gpt-4o', name: 'GPT-4o', description: 'OpenAI flagship' },
+  { id: 'agy/claude-opus-4-6-thinking', name: 'Claude Opus 4.6 Thinking', description: 'Advanced reasoning with thinking' },
+  { id: 'agy/gemini-pro-agent', name: 'Gemini Pro Agent', description: 'Google agent mode' },
+  { id: 'agy/gemini-3.5-flash-high', name: 'Gemini 3.5 Flash High', description: 'Fast and capable' },
+  { id: 'agy/gpt-oss-120b-medium', name: 'GPT OSS 120B Medium', description: 'Open source large model' },
 ]
 
 export const AI_CONFIG = {
-  // API Endpoint & Authentication (Development with Proxy)
-  baseURL: '/api/v1',
-  apiKey: 'sk-7c385384dc41adf3-8s0uu8-02500fae',
-  model: 'cx/gpt-5.5', // Default model
+  // API Endpoint & Authentication
+  baseURL: 'https://slip-live-managed-python.trycloudflare.com/v1',
+  apiKey: 'sk-cf0251454562791d-7535b8-3a469fcd',
+  model: 'agy/claude-opus-4-6-thinking', // Default model
   
   // Request settings
-  maxTokens: 8192, // Increased from 4096 for more detailed responses
+  maxTokens: 8192,
   temperature: 0.7,
   topP: 0.95,
   

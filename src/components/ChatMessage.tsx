@@ -26,7 +26,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         display: 'flex',
         flexDirection: isUser ? 'row-reverse' : 'row',
         gap: '10px',
-        marginBottom: '16px',
+        marginBottom: '12px',
         alignItems: 'flex-start',
       }}
     >
@@ -35,18 +35,21 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         style={{
           width: '36px',
           height: '36px',
-          borderRadius: '50%',
-          backgroundColor: isUser ? '#007acc' : '#10b981',
+          backgroundColor: isUser ? '#fff' : '#000',
+          color: isUser ? '#000' : '#fff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
+          border: '3px solid #000',
+          fontWeight: 900,
+          fontSize: '16px',
         }}
       >
         {isUser ? (
-          <UserOutlined style={{ color: '#fff', fontSize: '18px' }} />
+          <UserOutlined style={{ fontSize: '16px' }} />
         ) : (
-          <RobotOutlined style={{ color: '#fff', fontSize: '18px' }} />
+          <RobotOutlined style={{ fontSize: '16px' }} />
         )}
       </div>
 
@@ -63,10 +66,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         {/* Timestamp above bubble */}
         <div
           style={{
-            fontSize: '11px',
-            color: '#999',
+            fontSize: '10px',
+            color: '#000',
             marginBottom: '4px',
             padding: '0 4px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
           }}
         >
           {new Date(message.timestamp).toLocaleTimeString([], {
@@ -78,12 +84,14 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         {/* Message bubble */}
         <div
           style={{
-            backgroundColor: isUser ? '#007acc' : '#f3f4f6',
-            color: isUser ? '#fff' : '#1a1a1a',
+            backgroundColor: isUser ? '#000' : '#fff',
+            color: isUser ? '#fff' : '#000',
             padding: '12px 16px',
-            borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-            fontSize: '14px',
-            lineHeight: '1.5',
+            border: '3px solid #000',
+            boxShadow: isUser ? 'none' : '4px 4px 0 #000',
+            fontSize: '13px',
+            fontWeight: 500,
+            lineHeight: '1.6',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
             maxWidth: '100%',
@@ -95,10 +103,11 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               style={{
                 display: 'inline-block',
                 width: '8px',
-                height: '16px',
-                backgroundColor: isUser ? '#fff' : '#007acc',
-                marginLeft: '2px',
+                height: '14px',
+                backgroundColor: isUser ? '#fff' : '#000',
+                marginLeft: '4px',
                 animation: 'blink 1s infinite',
+                verticalAlign: 'middle',
               }}
             />
           )}
@@ -106,26 +115,28 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
         {/* Actions below bubble */}
         {!isUser && message.content && !message.isStreaming && (
-          <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
+          <div style={{ marginTop: '6px', display: 'flex', gap: '6px' }}>
             <button
               onClick={handleCopy}
+              className="brutalist-button"
               style={{
                 padding: '4px 10px',
-                fontSize: '11px',
-                backgroundColor: copied ? '#10b981' : 'transparent',
-                color: copied ? '#fff' : '#666',
-                border: copied ? 'none' : '1px solid #d1d5db',
-                borderRadius: '4px',
+                fontSize: '10px',
+                backgroundColor: copied ? '#000' : '#fff',
+                color: copied ? '#fff' : '#000',
+                border: '2px solid #000',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                transition: 'all 0.2s',
               }}
             >
               {copied ? (
                 <>
-                  <CheckOutlined /> Copied!
+                  <CheckOutlined /> Copied
                 </>
               ) : (
                 <>
@@ -142,14 +153,14 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             style={{
               marginTop: '8px',
               fontSize: '12px',
-              color: '#666',
-              backgroundColor: '#fafafa',
-              padding: '8px',
-              borderRadius: '6px',
+              color: '#000',
+              backgroundColor: '#fff',
+              padding: '8px 12px',
+              border: '2px solid #000',
               width: '100%',
             }}
           >
-            <summary style={{ cursor: 'pointer', fontWeight: 500 }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               💭 Thinking process
             </summary>
             <div style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>
