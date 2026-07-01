@@ -86,9 +86,10 @@ const FILE_TOOLS: Tool[] = [
 
 interface ChatPanelProps {
   currentFolder?: string
+  onClose?: () => void
 }
 
-export default function ChatPanel({ currentFolder }: ChatPanelProps) {
+export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
   const {
     messages,
     isLoading,
@@ -458,6 +459,39 @@ export default function ChatPanel({ currentFolder }: ChatPanelProps) {
               title="Clear chat"
             >
               <ClearOutlined /> Clear
+            </button>
+          )}
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              style={{
+                background: '#fff',
+                color: '#000',
+                border: '2px solid #000',
+                boxShadow: '2px 2px 0 #000',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 900,
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translate(1px, 1px)'
+                e.currentTarget.style.boxShadow = '1px 1px 0 #000'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = ''
+                e.currentTarget.style.boxShadow = '2px 2px 0 #000'
+              }}
+              title="Close panel"
+            >
+              ✕
             </button>
           )}
         </div>

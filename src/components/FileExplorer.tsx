@@ -11,6 +11,7 @@ interface FileItem {
 interface FileExplorerProps {
   onFileClick?: (path: string) => void
   onFolderChange?: (path: string) => void
+  onClose?: () => void
 }
 
 interface TreeNode extends FileItem {
@@ -19,7 +20,7 @@ interface TreeNode extends FileItem {
   isExpanded?: boolean
 }
 
-export default function FileExplorer({ onFileClick, onFolderChange }: FileExplorerProps) {
+export default function FileExplorer({ onFileClick, onFolderChange, onClose }: FileExplorerProps) {
   const [rootPath, setRootPath] = useState<string>('')
   const [treeData, setTreeData] = useState<TreeNode[]>([])
   const [selectedPath, setSelectedPath] = useState<string>('')
@@ -257,6 +258,39 @@ export default function FileExplorer({ onFileClick, onFolderChange }: FileExplor
           <FolderOpenOutlined />
           Open
         </button>
+
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              background: '#fff',
+              color: '#000',
+              border: '2px solid #fff',
+              boxShadow: '2px 2px 0 #000',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 900,
+              width: '30px',
+              height: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translate(1px, 1px)'
+              e.currentTarget.style.boxShadow = '1px 1px 0 #000'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = ''
+              e.currentTarget.style.boxShadow = '2px 2px 0 #000'
+            }}
+            title="Close panel"
+          >
+            ✕
+          </button>
+        )}
       </div>
       
       {/* Tree view */}

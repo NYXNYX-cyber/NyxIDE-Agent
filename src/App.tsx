@@ -246,42 +246,9 @@ function InternalApp() {
             overflow: 'hidden',
           }}
         >
-          <button
-            onClick={() => setChatOpen(false)}
-            style={{
-              position: 'absolute',
-              top: '10px',
-              right: '10px',
-              background: '#fff',
-              border: '2px solid #000',
-              boxShadow: '2px 2px 0 #000',
-              padding: '4px 8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 900,
-              color: '#000',
-              zIndex: 10,
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translate(1px, 1px)'
-              e.currentTarget.style.boxShadow = '1px 1px 0 #000'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = ''
-              e.currentTarget.style.boxShadow = '2px 2px 0 #000'
-            }}
-          >
-            ✕
-          </button>
-          
           {chatOpen && (
             <div style={{ height: '100%', overflow: 'hidden' }}>
-              <ChatPanel currentFolder={currentFolder} />
+              <ChatPanel currentFolder={currentFolder} onClose={() => setChatOpen(false)} />
             </div>
           )}
         </div>
@@ -360,42 +327,7 @@ function InternalApp() {
           position: 'relative', 
           transition: 'all 0.2s ease' 
         }}>
-          {explorerOpen && (
-            <button
-              onClick={() => setExplorerOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                background: '#fff',
-                border: '2px solid #000',
-                boxShadow: '2px 2px 0 #000',
-                padding: '4px 8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 900,
-                color: '#000',
-                zIndex: 10,
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translate(1px, 1px)'
-                e.currentTarget.style.boxShadow = '1px 1px 0 #000'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = ''
-                e.currentTarget.style.boxShadow = '2px 2px 0 #000'
-              }}
-            >
-              ✕
-            </button>
-          )}
-          
-          <FileExplorer onFileClick={handleFileClick} onFolderChange={setCurrentFolder} />
+          <FileExplorer onFileClick={handleFileClick} onFolderChange={setCurrentFolder} onClose={() => setExplorerOpen(false)} />
         </div>
 
         {/* Toggle button for explorer */}
