@@ -1,9 +1,7 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
-import path from 'path'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
+const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const path = require('path')
+const fs = require('fs')
 
-const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Track open files for multi-tab support
@@ -372,6 +370,42 @@ function createWindow() {
       return { success: false, error: error.message }
     }
   })
+
+  ipcMain.handle('terminal:execute-command', async (event, { command, cwd }) => {
+    const { exec } = require('child_process');
+    return new Promise((resolve) => {
+      if (mainWindow) {
+        mainWindow.webContents.send('terminal:data', `\r\n\x1b[33m[NyxIDE Agent] Running: ${command}\x1b[0m\r\n`);
+      }
+      const child = exec(command, { cwd: cwd || process.env.HOME || process.env.USERPROFILE });
+      let output = '';
+      child.stdout.on('data', (data) => {
+        output += data;
+        if (mainWindow) {
+          mainWindow.webContents.send('terminal:data', data.toString().replace(/\n/g, '\r\n'));
+        }
+      });
+      child.stderr.on('data', (data) => {
+        output += data;
+        if (mainWindow) {
+          mainWindow.webContents.send('terminal:data', `\x1b[31m${data.toString().replace(/\n/g, '\r\n')}\x1b[0m`);
+        }
+      });
+      child.on('close', (code) => {
+        if (mainWindow) {
+          mainWindow.webContents.send('terminal:data', `\r\n\x1b[32m[NyxIDE Agent] Command finished with exit code ${code}\x1b[0m\r\n`);
+        }
+        resolve({ success: code === 0, code, output });
+      });
+      child.on('error', (err) => {
+        const errMsg = err.message;
+        if (mainWindow) {
+          mainWindow.webContents.send('terminal:data', `\r\n\x1b[31m[NyxIDE Agent] Command error: ${errMsg}\x1b[0m\r\n`);
+        }
+        resolve({ success: false, code: -1, output: errMsg });
+      });
+    });
+  });
 }
 
 // Wait for Electron to be ready before creating windows
