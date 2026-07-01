@@ -12,9 +12,16 @@ export const AVAILABLE_MODELS = [
   { id: 'agy/gpt-oss-120b-medium', name: 'GPT OSS 120B Medium', description: 'Open source large model' },
 ]
 
+// Detect environment: Electron or Browser
+const isElectron = typeof window !== 'undefined' && (window as any).nyxide !== undefined
+
 export const AI_CONFIG = {
   // API Endpoint & Authentication
-  baseURL: 'https://slip-live-managed-python.trycloudflare.com/v1',
+  // In Electron: use direct URL (no CORS)
+  // In Browser: use proxy to avoid CORS
+  baseURL: isElectron 
+    ? 'https://slip-live-managed-python.trycloudflare.com/v1'
+    : '/api/v1', // Will be proxied by Vite dev server
   apiKey: 'sk-cf0251454562791d-7535b8-3a469fcd',
   model: 'agy/claude-opus-4-6-thinking', // Default model
   

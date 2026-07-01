@@ -35,4 +35,10 @@ contextBridge.exposeInMainWorld('nyxide', {
   // Dialog operations
   openFolderDialog: () => ipcRenderer.invoke('dialog:open-folder'),
   openFileDialog: () => ipcRenderer.invoke('dialog:open-file'),
+  
+  // AI API Proxy (bypass CORS)
+  aiChatStream: (requestBody) => ipcRenderer.invoke('ai:chat-stream', requestBody),
+  onAIStreamChunk: (callback) => ipcRenderer.on('ai:stream-chunk', (event, chunk) => callback(chunk)),
+  onAIStreamEnd: (callback) => ipcRenderer.on('ai:stream-end', () => callback()),
+  onAIStreamError: (callback) => ipcRenderer.on('ai:stream-error', (event, error) => callback(error)),
 })

@@ -317,6 +317,61 @@ function createWindow() {
       return { success: false, error: error.message }
     }
   })
+
+  // AI API Proxy - bypass CORS by making requests from main process
+  ipcMain.handle('ai:chat-stream', async (event, requestBody) => {
+    try {
+      console.log('[IPC] AI stream request received')
+      const apiUrl = 'https://slip-live-managed-python.trycloudflare.com/v1/chat/completions'
+      const apiKey = 'sk-cf0251454562791d-7535b8-3a469fcd'
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        return { success: false, error: `HTTP ${response.status}: ${errorText}` }
+      }
+
+      if (!response.body) {
+        return { success: false, error: 'No response body' }
+      }
+
+      // Read stream and send chunks to renderer
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      const sender = event.sender
+      
+      // Process stream in background
+      ;(async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              sender.send('ai:stream-end')
+              break
+            }
+            const chunk = decoder.decode(value, { stream: true })
+            sender.send('ai:stream-chunk', chunk)
+          }
+        } catch (err) {
+          console.error('[IPC] Stream error:', err)
+          sender.send('ai:stream-error', err.message)
+        }
+      })()
+
+      return { success: true, streaming: true }
+    } catch (error) {
+      console.error('[IPC] AI request error:', error)
+      return { success: false, error: error.message }
+    }
+  })
 }
 
 // Wait for Electron to be ready before creating windows
