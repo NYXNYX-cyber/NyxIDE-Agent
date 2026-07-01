@@ -655,15 +655,16 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
               }}>
                 <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>⚙️</span>
-                  <span>Terminal Action Required</span>
+                  <span>Tool Action Required</span>
                 </div>
                 {msg.tool_calls.map((tc, idx) => {
                   let cmd = '';
+                  let isCommand = tc.function.name === 'run_terminal_command';
                   try {
                     const args = typeof tc.function.arguments === 'string'
                       ? JSON.parse(tc.function.arguments)
                       : tc.function.arguments;
-                    cmd = args.command || '';
+                    cmd = isCommand ? args.command : (tc.function.name + ': ' + (args.path || ''));
                   } catch (e) {
                     cmd = tc.function.arguments || '';
                   }
@@ -682,7 +683,7 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
                         marginBottom: '10px',
                         border: '1px solid #000'
                       }}>
-                        $ {cmd}
+                        {isCommand ? '$ ' : ''}{cmd}
                       </div>
                       
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
@@ -727,7 +728,7 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
                                 cursor: 'pointer',
                               }}
                             >
-                              ✓ Run Command
+                              ✓ Run Action
                             </button>
                           </div>
                         )}
@@ -736,7 +737,7 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
                       {msg.toolOutput && (
                         <details style={{ marginTop: '10px' }}>
                           <summary style={{ fontSize: '11px', cursor: 'pointer', userSelect: 'none', color: '#666' }}>
-                            Show command output
+                            Show action output
                           </summary>
                           <pre style={{
                             marginTop: '6px',
