@@ -50,7 +50,7 @@
     "vite-plugin-electron": "^1.0.4",
     "wait-on": "^9.0.10"
   },
-  "main": "src-electron/main.js",
+  "main": "src-electron/main.cjs",
   "build": {
     "appId": "com.nyxiside.app",
     "productName": "NyxIDE",
