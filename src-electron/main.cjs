@@ -2,9 +2,6 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
-const __dirname = path.dirname(__filename)
-
-// Track open files for multi-tab support
 let openFiles = []
 
 let mainWindow = null
