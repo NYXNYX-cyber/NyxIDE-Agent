@@ -315,11 +315,20 @@ function createWindow() {
 
   // AI API Proxy - bypass CORS by making requests from main process
   ipcMain.handle('ai:chat-stream', async (event, requestBody) => {
+    const logFile = path.join(__dirname, '../main_process_log.txt')
+    const log = (msg) => {
+      try {
+        fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`, 'utf-8')
+      } catch (e) {
+        console.error('Logging failed:', e)
+      }
+    }
     try {
-      console.log('[IPC] AI stream request received')
+      log('AI stream request received')
       const apiUrl = 'https://slip-live-managed-python.trycloudflare.com/v1/chat/completions'
       const apiKey = 'sk-cf0251454562791d-7535b8-3a469fcd'
       
+      log('Calling fetch to: ' + apiUrl)
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -328,41 +337,51 @@ function createWindow() {
         },
         body: JSON.stringify(requestBody),
       })
+      log('Fetch status: ' + response.status)
 
       if (!response.ok) {
         const errorText = await response.text()
+        log('Fetch error: ' + errorText)
         return { success: false, error: `HTTP ${response.status}: ${errorText}` }
       }
 
       if (!response.body) {
+        log('No response body')
         return { success: false, error: 'No response body' }
       }
 
-      // Read stream and send chunks to renderer
+      log('Getting reader')
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       const sender = event.sender
       
+      log('Starting background stream processor')
       // Process stream in background
       ;(async () => {
         try {
           while (true) {
+            log('Reading chunk')
             const { done, value } = await reader.read()
             if (done) {
+              log('Stream done')
               sender.send('ai:stream-end')
               break
             }
             const chunk = decoder.decode(value, { stream: true })
+            log('Sending chunk of size ' + chunk.length)
             sender.send('ai:stream-chunk', chunk)
           }
         } catch (err) {
+          log('Background stream processor error: ' + err.message)
           console.error('[IPC] Stream error:', err)
           sender.send('ai:stream-error', err.message)
         }
       })()
 
+      log('Returning success')
       return { success: true, streaming: true }
     } catch (error) {
+      log('AI request error: ' + error.message)
       console.error('[IPC] AI request error:', error)
       return { success: false, error: error.message }
     }

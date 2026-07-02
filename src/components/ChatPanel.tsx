@@ -283,7 +283,13 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
       const currentMessages = useAIStore.getState().messages
       const contextMessages = currentMessages
         .slice(0, -1) // Exclude the last placeholder message
-        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content || '' }))
+        .map(m => ({
+          role: m.role as 'user' | 'assistant' | 'system' | 'tool',
+          content: m.content || '',
+          tool_calls: m.tool_calls,
+          tool_call_id: m.tool_call_id,
+          name: m.name
+        }))
 
       // Add current user message with working directory context
       const userMessageWithContext = currentFolder 
@@ -292,75 +298,101 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
       
       contextMessages.push({ role: 'user', content: userMessageWithContext })
 
-      // Stream the response with tool definitions
-      const result = await streamChatCompletion(
-        contextMessages as AIMessage[],
-        FILE_TOOLS, // Pass tools to AI
-        {
-          onChunk: (chunk) => {
-            updateStreamingMessage(assistantMessageId, chunk)
-          },
-          onError: (err) => {
-            console.error('[ChatPanel] Stream error:', err)
-            setError(err.message)
-          }
-        },
-        // Stream options: model and working directory
-        {
-          model: selectedModel,
-          workingDir: currentFolder,
-        }
-      )
-      
-      // If streaming didn't update via chunks, update directly from result
-      if (result.content && result.content.length > 0) {
-        const currentMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
-        if (currentMsg && currentMsg.content === '') {
-          console.log('[ChatPanel] Fallback: updating message from result.content')
-          updateStreamingMessage(assistantMessageId, result.content)
-        }
-      }
-      
-      // Wait for streaming to complete
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Only show fallback if content is empty AND no tool calls
-      const hasToolCalls = result.toolCalls && result.toolCalls.length > 0
-      const finalMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
-      if (finalMsg && finalMsg.content.trim() === '' && !hasToolCalls) {
-        console.warn('[ChatPanel] Empty response detected without tool calls, adding fallback')
-        updateStreamingMessage(assistantMessageId, '❌ AI tidak memberikan respons. Silakan coba lagi atau ubah model.')
-      }
+      let loopMessages = [...contextMessages]
+      let currentAssistantMessageId = assistantMessageId
+      let shouldContinue = true
+      let iterations = 0
+      const maxIterations = 5 // Prevent infinite loops
 
-      // Handle tool calls if any
-      if (result.toolCalls && result.toolCalls.length > 0) {
-        console.log('[ChatPanel] Tool calls detected:', result.toolCalls)
+      while (shouldContinue && iterations < maxIterations) {
+        iterations++
+        console.log(`[ChatPanel] Agent loop iteration ${iterations}`)
+
+        const result = await streamChatCompletion(
+          loopMessages,
+          FILE_TOOLS, // Pass tools to AI
+          {
+            onChunk: (chunk) => {
+              updateStreamingMessage(currentAssistantMessageId, chunk)
+            },
+            onError: (err) => {
+              console.error('[ChatPanel] Stream error:', err)
+              setError(err.message)
+            }
+          },
+          // Stream options: model and working directory
+          {
+            model: selectedModel,
+            workingDir: currentFolder,
+          }
+        )
         
-        // Filter tool calls
+        // If streaming didn't update via chunks, update directly from result
+        if (result.content && result.content.length > 0) {
+          const currentMsg = useAIStore.getState().messages.find(m => m.id === currentAssistantMessageId)
+          if (currentMsg && currentMsg.content === '') {
+            console.log('[ChatPanel] Fallback: updating message from result.content')
+            updateStreamingMessage(currentAssistantMessageId, result.content)
+          }
+        }
+        
+        // Wait for streaming to complete
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        const hasToolCalls = result.toolCalls && result.toolCalls.length > 0
+        const finalMsg = useAIStore.getState().messages.find(m => m.id === currentAssistantMessageId)
+        
+        // Handle empty content with no tool calls
+        if (finalMsg && finalMsg.content.trim() === '' && !hasToolCalls) {
+          console.warn('[ChatPanel] Empty response detected without tool calls, adding fallback')
+          updateStreamingMessage(currentAssistantMessageId, '❌ AI tidak memberikan respons. Silakan coba lagi atau ubah model.')
+          finalizeStreamingMessage(currentAssistantMessageId)
+          break
+        }
+
+        if (!hasToolCalls) {
+          finalizeStreamingMessage(currentAssistantMessageId)
+          break // No tools called, stop loop
+        }
+
+        // We have tool calls
         const fileToolCalls = result.toolCalls.filter(tc => tc.name !== 'run_terminal_command')
         const terminalToolCalls = result.toolCalls.filter(tc => tc.name === 'run_terminal_command')
         
-        // Handle manual terminal tool calls (requires user confirmation)
-        if (terminalToolCalls.length > 0) {
-          const formattedToolCalls = terminalToolCalls.map(tc => ({
-            id: tc.id || crypto.randomUUID(),
-            type: 'function',
-            function: {
-              name: tc.name,
-              arguments: typeof tc.arguments === 'object' ? JSON.stringify(tc.arguments) : tc.arguments
-            }
-          }))
-          
-          setToolCalls(assistantMessageId, formattedToolCalls, 'pending')
-        }
+        // Format tool calls for history
+        const formattedToolCalls = result.toolCalls.map(tc => ({
+          id: tc.id || crypto.randomUUID(),
+          type: 'function',
+          function: {
+            name: tc.name,
+            arguments: typeof tc.arguments === 'object' ? JSON.stringify(tc.arguments) : tc.arguments
+          }
+        }))
+
+        // Attach tool calls to the assistant message in store
+        setToolCalls(currentAssistantMessageId, formattedToolCalls, terminalToolCalls.length > 0 ? 'pending' : 'completed')
         
-        // Handle automatic file tool calls
+        // Push assistant message (with tool_calls) to the loop history
+        const assistantText = finalMsg?.content || ''
+        loopMessages.push({
+          role: 'assistant',
+          content: assistantText,
+          tool_calls: formattedToolCalls
+        })
+
+        if (terminalToolCalls.length > 0) {
+          // Terminal tool call requires user confirmation, so we must stop the automatic loop
+          finalizeStreamingMessage(currentAssistantMessageId)
+          shouldContinue = false
+          break
+        }
+
+        // Handle automatic file tools
         if (fileToolCalls.length > 0) {
           const toolResults: string[] = []
           let hasErrors = false
           
           for (const toolCall of fileToolCalls) {
-            // Show only the operation, not full details upfront
             const action = toolCall.name === 'readFile' ? '📖 Reading' :
                            toolCall.name === 'writeFile' ? '✏️ Writing' :
                            toolCall.name === 'createFile' ? '✨ Creating' :
@@ -385,9 +417,28 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
               role: 'assistant',
               content: toolResult,
             })
+
+            // Find matching formatted tool call ID
+            const matchedCall = formattedToolCalls.find(ftc => ftc.function.name === toolCall.name)
+            const toolCallId = matchedCall?.id || crypto.randomUUID()
+
+            // Add standard tool message to history for AI context
+            addMessage({
+              role: 'tool',
+              name: toolCall.name,
+              tool_call_id: toolCallId,
+              content: toolResult
+            })
+
+            loopMessages.push({
+              role: 'tool',
+              name: toolCall.name,
+              tool_call_id: toolCallId,
+              content: toolResult
+            })
           }
           
-          // After all automatic tool calls complete, show completion summary
+          // Show batch summary bubble
           if (toolResults.length > 0) {
             const successCount = toolResults.filter(r => !r.includes('❌')).length
             const totalTasks = toolResults.length
@@ -404,21 +455,34 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
               content: completionMessage,
             })
             
-            // Auto-refresh UI after task completion
+            // Auto-refresh UI
             await new Promise(resolve => setTimeout(resolve, 300))
             if ((window as any).fileExplorerRefresh) {
               (window as any).fileExplorerRefresh()
             }
           }
+
+          // Finalize previous assistant message
+          finalizeStreamingMessage(currentAssistantMessageId)
+
+          // Prepare a new assistant message placeholder for the next streaming iteration
+          currentAssistantMessageId = addMessage({
+            role: 'assistant',
+            content: '',
+            isStreaming: true,
+          })
+          
+          await new Promise(resolve => setTimeout(resolve, 50))
+          setStreaming(true)
         }
       }
 
-      // Finalize streaming or remove if completely empty
-      const finalAssistantMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
+      // Final cleanup of the last assistant message if it remained empty
+      const finalAssistantMsg = useAIStore.getState().messages.find(m => m.id === currentAssistantMessageId)
       if (finalAssistantMsg && finalAssistantMsg.content.trim() === '' && (!finalAssistantMsg.tool_calls || finalAssistantMsg.tool_calls.length === 0)) {
-        removeMessage(assistantMessageId)
+        removeMessage(currentAssistantMessageId)
       } else {
-        finalizeStreamingMessage(assistantMessageId)
+        finalizeStreamingMessage(currentAssistantMessageId)
       }
       console.log('[ChatPanel] Stream completed')
     } catch (error) {

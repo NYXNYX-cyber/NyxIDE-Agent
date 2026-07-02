@@ -37,9 +37,18 @@ contextBridge.exposeInMainWorld('nyxide', {
 
   // AI API Proxy (bypass CORS)
   aiChatStream: (requestBody) => ipcRenderer.invoke('ai:chat-stream', requestBody),
-  onAIStreamChunk: (callback) => ipcRenderer.on('ai:stream-chunk', (event, chunk) => callback(chunk)),
-  onAIStreamEnd: (callback) => ipcRenderer.on('ai:stream-end', () => callback()),
-  onAIStreamError: (callback) => ipcRenderer.on('ai:stream-error', (event, error) => callback(error)),
+  onAIStreamChunk: (callback) => {
+    ipcRenderer.removeAllListeners('ai:stream-chunk')
+    ipcRenderer.on('ai:stream-chunk', (event, chunk) => callback(chunk))
+  },
+  onAIStreamEnd: (callback) => {
+    ipcRenderer.removeAllListeners('ai:stream-end')
+    ipcRenderer.on('ai:stream-end', () => callback())
+  },
+  onAIStreamError: (callback) => {
+    ipcRenderer.removeAllListeners('ai:stream-error')
+    ipcRenderer.on('ai:stream-error', (event, error) => callback(error))
+  },
 
   // Terminal execution (AI agent)
   executeTerminalCommand: (command, cwd) => ipcRenderer.invoke('terminal:execute-command', { command, cwd }),
