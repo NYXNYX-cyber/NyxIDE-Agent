@@ -1,0 +1,18 @@
+data: {"id":"chatcmpl-yL1FapSINsuEqfkPiajG2Q0","object":"chat.completion.chunk","created":1782955465,"model":"gemini-3-flash-a","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-yL1FapSINsuEqfkPiajG2Q0","object":"chat.completion.chunk","created":1782955465,"model":"gemini-3-flash-a","choices":[{"index":0,"delta":{"content":"pong! I'm here and"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-yL1FapSINsuEqfkPiajG2Q0","object":"chat.completion.chunk","created":1782955465,"model":"gemini-3-flash-a","choices":[{"index":0,"delta":{"content":" ready to help. What coding task or project are we working on today?"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-yL1FapSINsuEqfkPiajG2Q0","object":"chat.completion.chunk","created":1782955465,"model":"gemini-3-flash-a","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":2078,"completion_tokens":117,"total_tokens":2195,"completion_tokens_details":{"reasoning_tokens":95}}}
+
+: x-omniroute-cache-hit=false
+: x-omniroute-latency-ms=55
+: x-omniroute-response-cost=0.0000000000
+: x-omniroute-tokens-in=78
+: x-omniroute-tokens-out=117
+: x-omniroute-version=3.8.39
+: x-omniroute-model=gemini-3.5-flash-high
+: x-omniroute-provider=agy
+data: [DONE]
+
