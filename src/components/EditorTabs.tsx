@@ -1,7 +1,11 @@
 import { useAppState } from '../context/AppContext'
 import { CloseOutlined } from '@ant-design/icons'
 
-export default function EditorTabs() {
+interface EditorTabsProps {
+  currentFolder?: string
+}
+
+export default function EditorTabs({ currentFolder }: EditorTabsProps) {
   const { tabs, activeTabPath, setActiveTab, closeFile } = useAppState()
 
   const handleCloseTab = async (e: React.MouseEvent, path: string) => {
@@ -104,8 +108,21 @@ export default function EditorTabs() {
           display: 'flex',
           alignItems: 'center',
           backgroundColor: '#f5f5f5',
+          gap: '8px',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
         }}>
-          ○ No files open • Click a file in the Explorer to open
+          {currentFolder ? (
+            <>
+              <span>📂</span>
+              <span style={{ textTransform: 'none', fontWeight: 900 }}>{currentFolder}</span>
+              <span style={{ opacity: 0.5 }}>•</span>
+              <span>No files open</span>
+            </>
+          ) : (
+            <span>○ No files open • Click a file in the Explorer to open</span>
+          )}
         </div>
       )}
     </div>

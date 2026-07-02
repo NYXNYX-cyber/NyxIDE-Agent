@@ -193,6 +193,14 @@ function InternalApp() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [activeTabPath, handleSave, handleNewFile, handleOpenFolder, handleCloseTab])
 
+  // Expose handleNewFile to window for explorer/components to use
+  useEffect(() => {
+    Object.assign(window, { nyxideNewFile: handleNewFile })
+    return () => {
+      delete (window as any).nyxideNewFile
+    }
+  }, [handleNewFile])
+
   // Add terminal keydown handler separately
   useEffect(() => {
     const handleTerminalKey = (e: KeyboardEvent) => {
@@ -229,7 +237,7 @@ function InternalApp() {
       />
       
       {/* Tab Bar */}
-      <EditorTabs />
+      <EditorTabs currentFolder={currentFolder} />
       
       {/* Main Content Area - Split Layout */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', backgroundColor: '#fff' }}>
@@ -300,18 +308,68 @@ function InternalApp() {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              color: '#888',
+              color: '#000',
               flexDirection: 'column',
               gap: '16px',
+              backgroundColor: '#fff',
             }}>
-              <div style={{ fontSize: '64px', opacity: 0.3 }}>📝</div>
-              <p>No file open</p>
-              <p style={{ fontSize: '13px', color: '#666' }}>
-                Open a folder from Explorer or create a new file
-              </p>
-              <p style={{ fontSize: '12px', color: '#555' }}>
-                Shortcuts: Ctrl+S (Save), Ctrl+F (Find)
-              </p>
+              <div style={{ fontSize: '64px' }}>📝</div>
+              <h3 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', margin: 0 }}>No file open</h3>
+              
+              {currentFolder ? (
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>
+                    Active folder: <code style={{ backgroundColor: '#f5f5f5', padding: '2px 6px', border: '1px solid #000' }}>{currentFolder}</code>
+                  </p>
+                  <button
+                    onClick={handleNewFile}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#a9ff68',
+                      color: '#000',
+                      border: '3px solid #000',
+                      boxShadow: '4px 4px 0 #000',
+                      fontWeight: 900,
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      letterSpacing: '1px',
+                      marginTop: '8px',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translate(1px, 1px)'
+                      e.currentTarget.style.boxShadow = '3px 3px 0 #000'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = ''
+                      e.currentTarget.style.boxShadow = '4px 4px 0 #000'
+                    }}
+                  >
+                    + Create New File
+                  </button>
+                </div>
+              ) : (
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#666', margin: 0 }}>
+                  Open a folder from Explorer to start
+                </p>
+              )}
+              
+              <div style={{ 
+                marginTop: '20px', 
+                padding: '12px', 
+                border: '2px solid #000', 
+                backgroundColor: '#f5f5f5', 
+                fontSize: '11px', 
+                fontWeight: 700,
+                boxShadow: '2px 2px 0 #000',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div>⌨️ Ctrl+N : New File</div>
+                <div>⌨️ Ctrl+O : Open File</div>
+                <div>⌨️ Ctrl+K Ctrl+O : Open Folder</div>
+              </div>
             </div>
           )}
         </div>

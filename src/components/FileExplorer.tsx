@@ -273,6 +273,33 @@ export default function FileExplorer({ onFileClick, onFolderChange, onClose }: F
           Open
         </button>
 
+        {rootPath && (
+          <button
+            onClick={() => {
+              if ((window as any).nyxideNewFile) {
+                (window as any).nyxideNewFile()
+              }
+            }}
+            style={{
+              padding: '6px 10px',
+              backgroundColor: '#a9ff68',
+              color: '#000',
+              border: '2px solid #a9ff68',
+              boxShadow: '2px 2px 0 #000',
+              fontSize: '11px',
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              letterSpacing: '0.5px',
+            }}
+          >
+            + File
+          </button>
+        )}
+
         {onClose && (
           <button
             onClick={onClose}
