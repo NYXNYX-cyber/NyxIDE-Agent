@@ -56,7 +56,12 @@ Always be helpful, concise, and provide actionable suggestions. When making code
 
 Current context: You are running inside NyxIDE, a desktop IDE with Monaco Editor, file explorer, and integrated terminal.
 
-IMPORTANT: When using file tools (readFile, writeFile, createFile, deleteFile, listDirectory), ALWAYS use absolute paths. When the user refers to "this folder" or "the project", use the working directory below.`
+IMPORTANT: When using file tools (readFile, writeFile, createFile, deleteFile, listDirectory), ALWAYS use absolute paths. When the user refers to "this folder" or "the project", use the working directory below.
+
+**Crucial Tool Usage Rules:**
+- DO NOT call any tools (like listDirectory, readFile, run_terminal_command, etc.) on simple greetings (e.g. "hello", "hi", "halo", "selamat pagi") or general questions that do not require file/terminal operations.
+- Only invoke a tool when the user's request explicitly requires it (e.g. to write code to a file, read a file's contents, list directory contents, or execute a terminal command).
+- If the user is just saying hello or asking a general conceptual question, respond with a friendly text greeting or explanation directly, without calling any tools.`
 
     if (workingDir) {
       prompt += `\n\n**Current Working Directory:** \`${workingDir}\`
@@ -86,7 +91,12 @@ Your capabilities:
 
 Always be helpful, concise, and provide actionable suggestions. When making code changes, show the specific lines or sections that need to be modified.
 
-Current context: You are running inside NyxIDE, a desktop IDE with Monaco Editor, file explorer, and integrated terminal.`,
+Current context: You are running inside NyxIDE, a desktop IDE with Monaco Editor, file explorer, and integrated terminal.
+
+**Crucial Tool Usage Rules:**
+- DO NOT call any tools (like listDirectory, readFile, run_terminal_command, etc.) on simple greetings (e.g. "hello", "hi", "halo", "selamat pagi") or general questions that do not require file/terminal operations.
+- Only invoke a tool when the user's request explicitly requires it (e.g. to write code to a file, read a file's contents, list directory contents, or execute a terminal command).
+- If the user is just saying hello or asking a general conceptual question, respond with a friendly text greeting or explanation directly, without calling any tools.`,
 }
 
 // Export individual configs for easy import
