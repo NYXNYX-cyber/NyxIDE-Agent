@@ -237,15 +237,41 @@ async function streamViaIPC(
       return null
     }
 
+    const finishStream = () => {
+      if (streamEnded) return
+      streamEnded = true
+
+      // Process any remaining buffer
+      if (buffer) {
+        processLine(buffer)
+      }
+
+      // Finalize tool calls
+      pendingToolCalls.forEach((toolCall, index) => {
+        if (toolCall.arguments) {
+          try {
+            const args = JSON.parse(toolCall.arguments)
+            toolCalls.push({ id: toolCall.id, name: toolCall.name, arguments: args })
+          } catch (e) {
+            console.error(`[AI Service] Failed to parse tool call ${index}:`, e)
+          }
+        }
+      })
+
+      resolve({ content: fullResponse, toolCalls })
+    }
+
     // Listen for stream chunks
     if ((window as any).nyxide?.onAIStreamChunk) {
       (window as any).nyxide.onAIStreamChunk((chunk: string) => {
+        console.log('[streamViaIPC] raw chunk received:', chunk)
         buffer += chunk
         const lines = buffer.split('\n')
         buffer = lines.pop() || ''
         for (const line of lines) {
+          console.log('[streamViaIPC] processing line:', line)
           if (processLine(line) === 'DONE') {
-            streamEnded = true
+            finishStream()
             break
           }
         }
@@ -255,27 +281,7 @@ async function streamViaIPC(
     // Listen for stream end
     if ((window as any).nyxide?.onAIStreamEnd) {
       (window as any).nyxide.onAIStreamEnd(() => {
-        if (streamEnded) return
-        streamEnded = true
-
-        // Process any remaining buffer
-        if (buffer) {
-          processLine(buffer)
-        }
-
-        // Finalize tool calls
-        pendingToolCalls.forEach((toolCall, index) => {
-          if (toolCall.arguments) {
-            try {
-              const args = JSON.parse(toolCall.arguments)
-              toolCalls.push({ id: toolCall.id, name: toolCall.name, arguments: args })
-            } catch (e) {
-              console.error(`[AI Service] Failed to parse tool call ${index}:`, e)
-            }
-          }
-        })
-
-        resolve({ content: fullResponse, toolCalls })
+        finishStream()
       })
     }
 
