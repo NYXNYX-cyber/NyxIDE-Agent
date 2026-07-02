@@ -1,6 +1,9 @@
 import { RobotOutlined, UserOutlined, CopyOutlined, CheckOutlined, SettingOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import type { AIMessage } from '../stores/aiStore'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 interface ChatMessageProps {
   message: AIMessage
