@@ -165,13 +165,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [tabs])
 
-  // Expose refreshTab to window for chat panel to use
+  // Expose openFile and refreshTab to window for chat panel to use
   useEffect(() => {
-    Object.assign(window, { nyxideRefreshTab: refreshTab })
+    Object.assign(window, { 
+      nyxideRefreshTab: refreshTab,
+      nyxideOpenFile: openFile
+    })
     return () => {
       delete (window as any).nyxideRefreshTab
+      delete (window as any).nyxideOpenFile
     }
-  }, [refreshTab])
+  }, [refreshTab, openFile])
 
   return (
     <AppContext.Provider value={{

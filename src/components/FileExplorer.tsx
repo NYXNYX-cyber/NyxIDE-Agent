@@ -26,6 +26,20 @@ export default function FileExplorer({ onFileClick, onFolderChange, onClose }: F
   const [selectedPath, setSelectedPath] = useState<string>('')
   const [refreshKey, setRefreshKey] = useState<number>(0)
 
+  // Load initial root directory from Electron CWD if not set
+  useEffect(() => {
+    if (!rootPath && (window as any).nyxide && (window as any).nyxide.getCwd) {
+      ;(window as any).nyxide.getCwd().then((result: any) => {
+        if (result && result.cwd) {
+          console.log('[FileExplorer] Auto-loading CWD:', result.cwd)
+          setRootPath(result.cwd)
+        }
+      }).catch((err: any) => {
+        console.error('[FileExplorer] Failed to get CWD:', err)
+      })
+    }
+  }, [rootPath])
+
   // Load root directory when rootPath changes or refreshKey changes
   useEffect(() => {
     if (rootPath) {

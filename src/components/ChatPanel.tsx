@@ -82,6 +82,20 @@ const FILE_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'run_terminal_command',
+      description: 'Run a shell/terminal command in the project working directory (e.g. npm run test, compile, run scripts). Requires user confirmation before execution.',
+      parameters: {
+        type: 'object',
+        properties: {
+          command: { type: 'string', description: 'The shell command to execute' },
+        },
+        required: ['command'],
+      },
+    },
+  },
 ]
 
 interface ChatPanelProps {
@@ -102,6 +116,10 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
     setStreaming,
     setError,
     clearMessages,
+    removeMessage,
+    updateMessageToolStatus,
+    updateMessageToolOutput,
+    setToolCalls,
   } = useAIStore()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -132,12 +150,22 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
   const executeTool = async (toolName: string, args: any): Promise<string> => {
     console.log('[ChatPanel] Executing tool:', toolName, args)
     
-    // Show loading message
-    const loadingMessageId = addMessage({
-      role: 'assistant',
-      content: '',
-      isStreaming: true,
-    })
+    // Resolve relative path if path argument is present and relative
+    if (args && typeof args.path === 'string' && currentFolder) {
+      const isAbsolute = args.path.startsWith('/') || /^[a-zA-Z]:[/\\]/.test(args.path)
+      if (!isAbsolute) {
+        const separator = currentFolder.includes('\\') ? '\\' : '/'
+        const cleanFolder = currentFolder.endsWith(separator) ? currentFolder.slice(0, -1) : currentFolder
+        const cleanFile = args.path.startsWith('.' + separator)
+          ? args.path.substring(2)
+          : args.path.startsWith(separator)
+            ? args.path.substring(1)
+            : args.path
+        args.path = `${cleanFolder}${separator}${cleanFile}`
+        console.log('[ChatPanel] Resolved relative path to absolute:', args.path)
+      }
+    }
+    
     setPendingToolCall({ name: `${toolName}...`, args })
     
     try {
@@ -145,16 +173,13 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         case 'readFile': {
           const result = await readFile.execute(args)
           if (!result.success) {
-            finalizeStreamingMessage(loadingMessageId)
             return `❌ Error reading file: ${result.error}`
           }
-          finalizeStreamingMessage(loadingMessageId)
           return `📄 **File Content:** ${result.path}\n\`\`\`\n${result.content}\n\`\`\`\n(${result.lineCount} lines)`
         }
         
         case 'writeFile': {
           const result = await writeFile.execute(args)
-          finalizeStreamingMessage(loadingMessageId)
           
           // Refresh editor tab if file is open, and refresh file explorer tree
           if (result.success) {
@@ -176,11 +201,15 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         
         case 'createFile': {
           const result = await createFile.execute(args)
-          finalizeStreamingMessage(loadingMessageId)
           
-          // Refresh file explorer tree to show new file
-          if (result.success && (window as any).fileExplorerRefresh) {
-            (window as any).fileExplorerRefresh()
+          // Open the file and refresh file explorer tree to show new file
+          if (result.success) {
+            if ((window as any).nyxideOpenFile) {
+              await (window as any).nyxideOpenFile(result.path)
+            }
+            if ((window as any).fileExplorerRefresh) {
+              (window as any).fileExplorerRefresh()
+            }
           }
           
           return result.success 
@@ -190,7 +219,6 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         
         case 'deleteFile': {
           const result = await deleteFile.execute(args)
-          finalizeStreamingMessage(loadingMessageId)
           
           // Refresh file explorer tree to reflect deletion
           if (result.success && (window as any).fileExplorerRefresh) {
@@ -205,11 +233,8 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         case 'listDirectory': {
           const result = await listDirectory.execute(args)
           if (!result.success) {
-            finalizeStreamingMessage(loadingMessageId)
             return `❌ Error listing directory: ${result.error}`
           }
-          
-          finalizeStreamingMessage(loadingMessageId)
           
           const items = result.items || []
           if (items.length === 0) return `📁 **Empty directory:** ${result.path}`
@@ -222,12 +247,10 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         }
         
         default:
-          finalizeStreamingMessage(loadingMessageId)
           return `⚠️ Unknown tool: ${toolName}`
       }
     } catch (error: any) {
       console.error('[ChatPanel] Tool execution error:', error)
-      finalizeStreamingMessage(loadingMessageId)
       return `❌ Error executing ${toolName}: ${error.message}`
     } finally {
       setPendingToolCall(null)
@@ -273,14 +296,14 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
       const result = await streamChatCompletion(
         contextMessages as AIMessage[],
         FILE_TOOLS, // Pass tools to AI
-        // On chunk callback
-        (chunk) => {
-          updateStreamingMessage(assistantMessageId, chunk)
-        },
-        // On error callback
-        (err) => {
-          console.error('[ChatPanel] Stream error:', err)
-          setError(err.message)
+        {
+          onChunk: (chunk) => {
+            updateStreamingMessage(assistantMessageId, chunk)
+          },
+          onError: (err) => {
+            console.error('[ChatPanel] Stream error:', err)
+            setError(err.message)
+          }
         },
         // Stream options: model and working directory
         {
@@ -313,68 +336,90 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
       if (result.toolCalls && result.toolCalls.length > 0) {
         console.log('[ChatPanel] Tool calls detected:', result.toolCalls)
         
-        const toolResults: string[] = []
-        let hasErrors = false
+        // Filter tool calls
+        const fileToolCalls = result.toolCalls.filter(tc => tc.name !== 'run_terminal_command')
+        const terminalToolCalls = result.toolCalls.filter(tc => tc.name === 'run_terminal_command')
         
-        for (const toolCall of result.toolCalls) {
-          setPendingToolCall({ name: `${toolCall.name}...`, args: toolCall.arguments })
+        // Handle manual terminal tool calls (requires user confirmation)
+        if (terminalToolCalls.length > 0) {
+          const formattedToolCalls = terminalToolCalls.map(tc => ({
+            id: tc.id || crypto.randomUUID(),
+            type: 'function',
+            function: {
+              name: tc.name,
+              arguments: typeof tc.arguments === 'object' ? JSON.stringify(tc.arguments) : tc.arguments
+            }
+          }))
           
-          // Show only the operation, not full details upfront
-          const action = toolCall.name === 'readFile' ? '📖 Reading' :
-                         toolCall.name === 'writeFile' ? '✏️ Writing' :
-                         toolCall.name === 'createFile' ? '✨ Creating' :
-                         toolCall.name === 'deleteFile' ? '🗑️ Deleting' :
-                         toolCall.name === 'listDirectory' ? '📁 Listing' : '⚙️ Processing'
-          
-          const targetPath = (toolCall.arguments as any).path || 'unknown'
-          addMessage({
-            role: 'assistant',
-            content: `**${action}:** ${targetPath.split('/').pop()}`
-          })
-
-          // Execute the tool
-          const toolResult = await executeTool(toolCall.name, toolCall.arguments)
-          toolResults.push(toolResult)
-          
-          // Check if operation succeeded or failed
-          if (toolResult.includes('❌') || toolResult.includes('Error')) {
-            hasErrors = true
-          }
-          
-          // Show detailed result
-          addMessage({
-            role: 'assistant',
-            content: toolResult,
-          })
+          setToolCalls(assistantMessageId, formattedToolCalls, 'pending')
         }
         
-        // After all tool calls complete, show completion summary
-        if (toolResults.length > 0) {
-          const successCount = toolResults.filter(r => !r.includes('❌')).length
-          const totalTasks = toolResults.length
+        // Handle automatic file tool calls
+        if (fileToolCalls.length > 0) {
+          const toolResults: string[] = []
+          let hasErrors = false
           
-          let completionMessage = ''
-          if (hasErrors) {
-            completionMessage = `\n\n⚠️ **Task Selesai:** ${successCount}/${totalTasks} berhasil, beberapa ada error`
-          } else {
-            completionMessage = `\n\n✅ **Task Selesai!** Semua ${totalTasks} operasi berhasil dikerjakan.`
+          for (const toolCall of fileToolCalls) {
+            // Show only the operation, not full details upfront
+            const action = toolCall.name === 'readFile' ? '📖 Reading' :
+                           toolCall.name === 'writeFile' ? '✏️ Writing' :
+                           toolCall.name === 'createFile' ? '✨ Creating' :
+                           toolCall.name === 'deleteFile' ? '🗑️ Deleting' :
+                           toolCall.name === 'listDirectory' ? '📁 Listing' : '⚙️ Processing'
+            
+            const targetPath = (toolCall.arguments as any).path || 'unknown'
+            addMessage({
+              role: 'assistant',
+              content: `**${action}:** ${targetPath.split('/').pop()}`
+            })
+
+            // Execute the tool
+            const toolResult = await executeTool(toolCall.name, toolCall.arguments)
+            toolResults.push(toolResult)
+            
+            if (toolResult.includes('❌') || toolResult.includes('Error')) {
+              hasErrors = true
+            }
+            
+            addMessage({
+              role: 'assistant',
+              content: toolResult,
+            })
           }
           
-          addMessage({
-            role: 'assistant',
-            content: completionMessage,
-          })
-          
-          // Auto-refresh UI after task completion
-          await new Promise(resolve => setTimeout(resolve, 300))
-          if ((window as any).fileExplorerRefresh) {
-            (window as any).fileExplorerRefresh()
+          // After all automatic tool calls complete, show completion summary
+          if (toolResults.length > 0) {
+            const successCount = toolResults.filter(r => !r.includes('❌')).length
+            const totalTasks = toolResults.length
+            
+            let completionMessage = ''
+            if (hasErrors) {
+              completionMessage = `\n\n⚠️ **Task Selesai:** ${successCount}/${totalTasks} berhasil, beberapa ada error`
+            } else {
+              completionMessage = `\n\n✅ **Task Selesai!** Semua ${totalTasks} operasi berhasil dikerjakan.`
+            }
+            
+            addMessage({
+              role: 'assistant',
+              content: completionMessage,
+            })
+            
+            // Auto-refresh UI after task completion
+            await new Promise(resolve => setTimeout(resolve, 300))
+            if ((window as any).fileExplorerRefresh) {
+              (window as any).fileExplorerRefresh()
+            }
           }
         }
       }
 
-      // Finalize streaming
-      finalizeStreamingMessage(assistantMessageId)
+      // Finalize streaming or remove if completely empty
+      const finalAssistantMsg = useAIStore.getState().messages.find(m => m.id === assistantMessageId)
+      if (finalAssistantMsg && finalAssistantMsg.content.trim() === '' && (!finalAssistantMsg.tool_calls || finalAssistantMsg.tool_calls.length === 0)) {
+        removeMessage(assistantMessageId)
+      } else {
+        finalizeStreamingMessage(assistantMessageId)
+      }
       console.log('[ChatPanel] Stream completed')
     } catch (error) {
       console.error('[ChatPanel] Error:', error)
@@ -406,11 +451,7 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
       : toolCall.function.arguments
 
     // Mark as running
-    useAIStore.setState((state) => ({
-      messages: state.messages.map(m =>
-        m.id === messageId ? { ...m, toolExecutionStatus: 'running' as const } : m
-      )
-    }))
+    updateMessageToolStatus(messageId, 'running')
     setLoading(true)
 
     try {
@@ -424,12 +465,9 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         isSuccess = res.success
       }
 
-      // Update message status
-      useAIStore.setState((state) => ({
-        messages: state.messages.map(m =>
-          m.id === messageId ? { ...m, toolExecutionStatus: isSuccess ? 'completed' as const : 'failed' as const, toolOutput: resultText } : m
-        )
-      }))
+      // Update message status and output
+      updateMessageToolStatus(messageId, isSuccess ? 'completed' : 'failed')
+      updateMessageToolOutput(messageId, resultText)
 
       // Add tool response
       addMessage({
@@ -470,25 +508,24 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
         }
       }
 
-      finalizeStreamingMessage(assistantMsgId)
-    } catch (err) {
+      // Finalize or remove if empty
+      const finalAssistantMsg = useAIStore.getState().messages.find(m => m.id === assistantMsgId)
+      if (finalAssistantMsg && finalAssistantMsg.content.trim() === '' && (!finalAssistantMsg.tool_calls || finalAssistantMsg.tool_calls.length === 0)) {
+        removeMessage(assistantMsgId)
+      } else {
+        finalizeStreamingMessage(assistantMsgId)
+      }
+    } catch (err: any) {
       console.error('[ChatPanel] Tool execution error:', err)
-      useAIStore.setState((state) => ({
-        messages: state.messages.map(m =>
-          m.id === messageId ? { ...m, toolExecutionStatus: 'failed' as const, toolOutput: err.message } : m
-        )
-      }))
+      updateMessageToolStatus(messageId, 'failed')
+      updateMessageToolOutput(messageId, err.message || 'Unknown error occurred during tool execution')
     } finally {
       setLoading(false)
     }
   }
 
   const handleCancelTool = async (messageId: string) => {
-    useAIStore.setState((state) => ({
-      messages: state.messages.map(m =>
-        m.id === messageId ? { ...m, toolExecutionStatus: 'rejected' as const } : m
-      )
-    }))
+    updateMessageToolStatus(messageId, 'rejected')
   }
 
 

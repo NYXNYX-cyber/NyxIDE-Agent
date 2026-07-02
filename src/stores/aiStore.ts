@@ -40,6 +40,9 @@ interface AIState {
   setError: (error: string | null) => void
   clearMessages: () => void
   removeMessage: (id: string) => void
+  updateMessageToolStatus: (id: string, status: 'pending' | 'running' | 'completed' | 'failed' | 'rejected') => void
+  updateMessageToolOutput: (id: string, output: string) => void
+  setToolCalls: (id: string, toolCalls: any[], status: 'pending' | 'running' | 'completed' | 'failed' | 'rejected') => void
   
   // Context helpers
   getRecentMessages: (limit?: number) => AIMessage[]
@@ -107,6 +110,24 @@ export const useAIStore = create<AIState>()(
       
       removeMessage: (id) => set((state) => ({
         messages: state.messages.filter(msg => msg.id !== id),
+      })),
+
+      updateMessageToolStatus: (id, status) => set((state) => ({
+        messages: state.messages.map(m =>
+          m.id === id ? { ...m, toolExecutionStatus: status } : m
+        )
+      })),
+      
+      updateMessageToolOutput: (id, output) => set((state) => ({
+        messages: state.messages.map(m =>
+          m.id === id ? { ...m, toolOutput: output } : m
+        )
+      })),
+
+      setToolCalls: (id, toolCalls, status) => set((state) => ({
+        messages: state.messages.map(m =>
+          m.id === id ? { ...m, tool_calls: toolCalls, toolExecutionStatus: status } : m
+        )
       })),
       
       getRecentMessages: (limit = 20) => {
