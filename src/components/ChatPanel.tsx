@@ -396,297 +396,101 @@ export default function ChatPanel({ currentFolder, onClose }: ChatPanelProps) {
     }
   }
 
-  const executeConversationFlow = async (history, activeModel) => {
-    setIsGenerating(true)
-    setReasoning('')
+  const handleRunTool = async (messageId: string) => {
+    const msg = useAIStore.getState().messages.find(m => m.id === messageId)
+    if (!msg || !msg.tool_calls || msg.tool_calls.length === 0) return
 
-    const apiMessages = history.map((msg) => {
-      const apiMsg = {
-        role: msg.role,
-        content: msg.content
-      }
-      if (msg.tool_calls) apiMsg.tool_calls = msg.tool_calls
-      if (msg.tool_call_id) apiMsg.tool_call_id = msg.tool_call_id
-      if (msg.name) apiMsg.name = msg.name
-      return apiMsg
-    })
-
-    const tools = [
-      {
-        type: 'function',
-        function: {
-          name: 'run_terminal_command',
-          description: 'Execute a terminal/shell command (e.g. npm install, npm run build, tests, git commands) in the project workspace.',
-          parameters: {
-            type: 'object',
-            properties: {
-              command: {
-                type: 'string',
-                description: 'The exact command to run (e.g., "npm test" or "ls").'
-              }
-            },
-            required: ['command']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'read_file',
-          description: 'Read the contents of a file in the workspace.',
-          parameters: {
-            type: 'object',
-            properties: {
-              path: {
-                type: 'string',
-                description: 'The path of the file to read, relative to the workspace root or absolute.'
-              }
-            },
-            required: ['path']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'write_file',
-          description: 'Write or overwrite a file in the workspace with new content.',
-          parameters: {
-            type: 'object',
-            properties: {
-              path: {
-                type: 'string',
-                description: 'The path of the file to write, relative to the workspace root or absolute.'
-              },
-              content: {
-                type: 'string',
-                description: 'The complete content to write into the file.'
-              }
-            },
-            required: ['path', 'content']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'list_dir',
-          description: 'List the contents of a directory in the workspace.',
-          parameters: {
-            type: 'object',
-            properties: {
-              path: {
-                type: 'string',
-                description: 'The path of the directory to list (use "." for workspace root).'
-              }
-            },
-            required: ['path']
-          }
-        }
-      }
-    ]
-
-    const assistantMsgId = Math.random().toString(36).substring(7)
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: assistantMsgId,
-        role: 'assistant',
-        content: '',
-        timestamp: Date.now(),
-        model: activeModel,
-      },
-    ])
-
-    try {
-      const result = await streamChatCompletion(
-        apiMessages,
-        tools,
-        {
-          onChunk: (chunk) => {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMsgId
-                  ? { ...msg, content: (msg.content || '') + chunk }
-                  : msg
-              )
-            )
-          },
-          onError: (err) => {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMsgId
-                  ? { ...msg, content: (msg.content || '') + `
-
-[Error: ${err.message}]` }
-                  : msg
-              )
-            )
-            setIsGenerating(false)
-          },
-        },
-        { model: activeModel, workingDir: currentFolder }
-      )
-
-      const hasToolCalls = result.toolCalls && result.toolCalls.length > 0
-
-      setMessages((prev) =>
-        prev.map((msg) => {
-          if (msg.id === assistantMsgId) {
-            const updated = {
-              ...msg,
-              content: result.content || (hasToolCalls ? 'I need to run a tool action to proceed:' : ''),
-              tokens: Math.round((result.content || '').length / 4),
-            }
-            if (hasToolCalls) {
-              updated.tool_calls = result.toolCalls.map(tc => ({
-                id: tc.id || `call_${Math.random().toString(36).substring(7)}`,
-                type: 'function',
-                function: {
-                  name: tc.name,
-                  arguments: typeof tc.arguments === 'string' ? tc.arguments : JSON.stringify(tc.arguments)
-                }
-              }))
-              updated.toolExecutionStatus = 'pending'
-            }
-            return updated
-          }
-          return msg
-        })
-      )
-
-      if (!hasToolCalls) {
-        setIsGenerating(false)
-      }
-    } catch (error) {
-      console.error('Error in conversation flow:', error)
-      setIsGenerating(false)
-    }
-  }
-
-  const handleRunTool = async (messageId) => {
-    const message = messages.find(m => m.id === messageId)
-    if (!message || !message.tool_calls || message.tool_calls.length === 0) return
-
-    const toolCall = message.tool_calls[0]
+    const toolCall = msg.tool_calls[0]
     const args = typeof toolCall.function.arguments === 'string'
       ? JSON.parse(toolCall.function.arguments)
       : toolCall.function.arguments
-    const command = args.command
 
-    setMessages(prev => prev.map(m =>
-      m.id === messageId ? { ...m, toolExecutionStatus: 'running' } : m
-    ))
-    setIsGenerating(true)
+    // Mark as running
+    useAIStore.setState((state) => ({
+      messages: state.messages.map(m =>
+        m.id === messageId ? { ...m, toolExecutionStatus: 'running' as const } : m
+      )
+    }))
+    setLoading(true)
 
     try {
       let resultText = ''
       let isSuccess = false
 
       if (toolCall.function.name === 'run_terminal_command') {
-        const res = await (window).nyxide.executeTerminalCommand(command, currentFolder)
+        const command = args.command
+        const res = await (window as any).nyxide.executeTerminalCommand(command, currentFolder)
         resultText = res.output || (res.success ? 'Command completed successfully.' : 'Command failed.')
         isSuccess = res.success
-      } else if (toolCall.function.name === 'read_file') {
-        const fullPath = args.path.startsWith('/') || args.path.includes(':')
-          ? args.path
-          : `${currentFolder}/${args.path}`
-        const res = await (window).nyxide.readFile(fullPath)
-        if (res.success) {
-          resultText = res.content
-          isSuccess = true
-        } else {
-          resultText = `Error reading file: ${res.error}`
-          isSuccess = false
-        }
-      } else if (toolCall.function.name === 'write_file') {
-        const fullPath = args.path.startsWith('/') || args.path.includes(':')
-          ? args.path
-          : `${currentFolder}/${args.path}`
-        const res = await (window).nyxide.writeFile(fullPath, args.content)
-        if (res.success) {
-          resultText = `File written successfully to ${args.path}`
-          isSuccess = true
-        } else {
-          resultText = `Error writing file: ${res.error}`
-          isSuccess = false
-        }
-      } else if (toolCall.function.name === 'list_dir') {
-        const fullPath = args.path.startsWith('/') || args.path.includes(':')
-          ? args.path
-          : `${currentFolder}/${args.path}`
-        const res = await (window).nyxide.listDirectory(fullPath)
-        if (res.success) {
-          resultText = JSON.stringify(res.items, null, 2)
-          isSuccess = true
-        } else {
-          resultText = `Error listing directory: ${res.error}`
-          isSuccess = false
-        }
       }
 
-      setMessages(prev => prev.map(m =>
-        m.id === messageId ? {
-          ...m,
-          toolExecutionStatus: isSuccess ? 'completed' : 'failed',
-          toolOutput: resultText
-        } : m
-      ))
+      // Update message status
+      useAIStore.setState((state) => ({
+        messages: state.messages.map(m =>
+          m.id === messageId ? { ...m, toolExecutionStatus: isSuccess ? 'completed' as const : 'failed' as const, toolOutput: resultText } : m
+        )
+      }))
 
-      const toolResponseMsg = {
-        id: Math.random().toString(36).substring(7),
+      // Add tool response
+      addMessage({
         role: 'tool',
         name: toolCall.function.name,
         tool_call_id: toolCall.id,
         content: resultText,
-        timestamp: Date.now()
+      })
+
+      // Continue conversation with tool result
+      const currentMessages = useAIStore.getState().messages
+      const contextMessages = currentMessages
+        .map(m => ({ role: m.role as 'user' | 'assistant' | 'system' | 'tool', content: m.content || '', tool_calls: m.tool_calls, tool_call_id: m.tool_call_id, name: m.name }))
+
+      const assistantMsgId = addMessage({
+        role: 'assistant',
+        content: '',
+        isStreaming: true,
+      })
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+      setStreaming(true)
+
+      const result = await streamChatCompletion(contextMessages, [], {
+        onChunk: (chunk) => {
+          updateStreamingMessage(assistantMsgId, chunk)
+        },
+        onError: (err) => {
+          setError(err.message)
+          finalizeStreamingMessage(assistantMsgId)
+        }
+      }, { model: selectedModel, workingDir: currentFolder })
+
+      if (result.content) {
+        const finalMsg = useAIStore.getState().messages.find(m => m.id === assistantMsgId)
+        if (finalMsg && finalMsg.content === '') {
+          updateStreamingMessage(assistantMsgId, result.content)
+        }
       }
 
-      const updatedMessages = [...messages, toolResponseMsg]
-      setMessages(prev => [...prev, toolResponseMsg])
-
-      const activeModel = settingsOpen ? settings.model : AI_CONFIG.model
-      await executeConversationFlow(updatedMessages, activeModel)
-
+      finalizeStreamingMessage(assistantMsgId)
     } catch (err) {
-      console.error('Error executing tool:', err)
-      setMessages(prev => prev.map(m =>
-        m.id === messageId ? {
-          ...m,
-          toolExecutionStatus: 'failed',
-          toolOutput: err.message
-        } : m
-      ))
-      setIsGenerating(false)
+      console.error('[ChatPanel] Tool execution error:', err)
+      useAIStore.setState((state) => ({
+        messages: state.messages.map(m =>
+          m.id === messageId ? { ...m, toolExecutionStatus: 'failed' as const, toolOutput: err.message } : m
+        )
+      }))
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleCancelTool = async (messageId) => {
-    const message = messages.find(m => m.id === messageId)
-    if (!message || !message.tool_calls || message.tool_calls.length === 0) return
-
-    const toolCall = message.tool_calls[0]
-
-    setMessages(prev => prev.map(m =>
-      m.id === messageId ? { ...m, toolExecutionStatus: 'rejected' } : m
-    ))
-
-    const toolResponseMsg = {
-      id: Math.random().toString(36).substring(7),
-      role: 'tool',
-      name: toolCall.function.name,
-      tool_call_id: toolCall.id,
-      content: 'Cancelled by user. The user did not approve running this command.',
-      timestamp: Date.now()
-    }
-
-    const updatedMessages = [...messages, toolResponseMsg]
-    setMessages(prev => [...prev, toolResponseMsg])
-
-    const activeModel = settingsOpen ? settings.model : AI_CONFIG.model
-    await executeConversationFlow(updatedMessages, activeModel)
+  const handleCancelTool = async (messageId: string) => {
+    useAIStore.setState((state) => ({
+      messages: state.messages.map(m =>
+        m.id === messageId ? { ...m, toolExecutionStatus: 'rejected' as const } : m
+      )
+    }))
   }
+
 
   return (
     <div
