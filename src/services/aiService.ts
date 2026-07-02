@@ -198,30 +198,57 @@ async function streamViaIPC(
   callbacks?: StreamCallbacks
 ): Promise<{ content: string; toolCalls: any[] }> {
   return new Promise((resolve, reject) => {
-    let fullStream = ''
+    let fullResponse = ''
+    const toolCalls: any[] = []
+    const pendingToolCalls = new Map<number, { id?: string; name: string; arguments: string }>()
     let streamEnded = false
+    let buffer = ''
 
-    // Setup listeners
-    const cleanup = () => {
-      if ((window as any).nyxide?.onAIStreamChunk) {
-        // Note: We can't easily remove contextBridge listeners
-        // They'll be GC'd when no longer referenced
+    const processLine = (line: string) => {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith(':')) return null
+      if (trimmed === 'data: [DONE]') {
+        return 'DONE'
       }
-    }
-
-    // Override the chunk callback to accumulate stream
-    const wrappedCallbacks: StreamCallbacks = {
-      ...callbacks,
-      onChunk: (chunk) => {
-        fullStream += chunk
-        if (callbacks?.onChunk) callbacks.onChunk(chunk)
+      if (trimmed.startsWith('data: ')) {
+        try {
+          const json = JSON.parse(trimmed.slice(6))
+          const choice = json.choices?.[0]
+          if (!choice) return null
+          const content = choice.delta?.content || ''
+          if (content) {
+            fullResponse += content
+            if (callbacks?.onChunk) callbacks.onChunk(content)
+          }
+          const toolCallDelta = choice.delta?.tool_calls?.[0]
+          if (toolCallDelta && toolCallDelta.index !== undefined) {
+            if (!pendingToolCalls.has(toolCallDelta.index)) {
+              pendingToolCalls.set(toolCallDelta.index, { name: '', arguments: '' })
+            }
+            const tc = pendingToolCalls.get(toolCallDelta.index)!
+            if (toolCallDelta.id && !tc.id) tc.id = toolCallDelta.id
+            if (toolCallDelta.function?.name) tc.name += toolCallDelta.function.name
+            if (toolCallDelta.function?.arguments) tc.arguments += toolCallDelta.function.arguments
+          }
+        } catch (e) {
+          // Skip invalid JSON
+        }
       }
+      return null
     }
 
     // Listen for stream chunks
     if ((window as any).nyxide?.onAIStreamChunk) {
       (window as any).nyxide.onAIStreamChunk((chunk: string) => {
-        wrappedCallbacks.onChunk?.(chunk)
+        buffer += chunk
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (processLine(line) === 'DONE') {
+            streamEnded = true
+            break
+          }
+        }
       })
     }
 
@@ -230,8 +257,25 @@ async function streamViaIPC(
       (window as any).nyxide.onAIStreamEnd(() => {
         if (streamEnded) return
         streamEnded = true
-        // Process accumulated stream
-        processSSEStream(fullStream, callbacks).then(resolve).catch(reject)
+
+        // Process any remaining buffer
+        if (buffer) {
+          processLine(buffer)
+        }
+
+        // Finalize tool calls
+        pendingToolCalls.forEach((toolCall, index) => {
+          if (toolCall.arguments) {
+            try {
+              const args = JSON.parse(toolCall.arguments)
+              toolCalls.push({ id: toolCall.id, name: toolCall.name, arguments: args })
+            } catch (e) {
+              console.error(`[AI Service] Failed to parse tool call ${index}:`, e)
+            }
+          }
+        })
+
+        resolve({ content: fullResponse, toolCalls })
       })
     }
 
